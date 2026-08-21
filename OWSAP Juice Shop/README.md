@@ -29,8 +29,7 @@ El payload fue introducido en el campo de búsqueda de la aplicación.
 **Resultado:**
 Al procesarse la búsqueda, apareció una alerta con el texto `xss`, demostrando que fue posible ejecutar JavaScript controlado por el usuario en el navegador.
 
-(Captura del payload introducido y de la alerta)
-
+![](./images/DOM-XSS.png)
 **Análisis:**
 Una vulnerabilidad DOM XSS ocurre cuando datos controlados por el usuario son procesados por JavaScript en el navegador y posteriormente utilizados de forma insegura para modificar el DOM.
 
@@ -73,7 +72,7 @@ El payload fue introducido en el mismo campo de búsqueda utilizado para explota
 **Resultado:**
 La aplicación interpretó el payload como HTML y creó un `iframe` que cargó un reproductor de SoundCloud dentro de la página.
 
-(Captura del reproductor de SoundCloud inyectado)
+![](./images/SoundCloud-DOMXSS.pmg)
 
 **Análisis:**
 Este challenge utiliza la misma vulnerabilidad DOM XSS explicada anteriormente. La diferencia está en el payload utilizado.
@@ -103,7 +102,7 @@ Finalmente, se accedió al documento: /ftp/acquisitions.md
 **Resultado:**
 Fue posible acceder al documento confidencial `acquisitions.md`, completando el challenge.
 
-(Captura del listado de documentos en `/ftp/`)
+![](./images/SensitiveContent.png)
 
 **Análisis:**
 La aplicación exponía públicamente el directorio `/ftp/`. El enlace a `legal.md` permitió descubrir la existencia de este directorio y, al acceder directamente a él, el servidor permitió listar los archivos almacenados.
@@ -135,8 +134,8 @@ Se accedió directamente a: `http://localhost:3000/metrics`
 **Resultado:**
 El endpoint devolvió las métricas de la aplicación, completando el challenge.
 
-(Captura del endpoint `/metrics` mostrando las métricas)
-
+![](./images/Metrics.png
+)
 **Análisis técnico:**
 El challenge expone públicamente un endpoint de observabilidad utilizado para proporcionar métricas de la aplicación.
 
