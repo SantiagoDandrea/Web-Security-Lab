@@ -72,7 +72,7 @@ El payload fue introducido en el mismo campo de búsqueda utilizado para explota
 **Resultado:**
 La aplicación interpretó el payload como HTML y creó un `iframe` que cargó un reproductor de SoundCloud dentro de la página.
 
-![](./images/SoundCloud-DOMXSS.pmg)
+![](./images/SoundCloud-DOMXSS.png)
 
 **Análisis:**
 Este challenge utiliza la misma vulnerabilidad DOM XSS explicada anteriormente. La diferencia está en el payload utilizado.
