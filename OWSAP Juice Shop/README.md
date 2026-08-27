@@ -57,7 +57,8 @@ La solución específica consiste en eliminar el bypass de sanitización. El cam
 
 De forma general, los datos no confiables no deberían insertarse en sinks peligrosos como `innerHTML` o `document.write()`. Cuando solo es necesario mostrar texto, se deben utilizar mecanismos seguros como: `element.textContent = userInput;`
 
-**Referencia:** [ OWASP DOM Based XSS Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html?utm_source=chatgpt.com)
+**Referencia:** [ OWASP DOM Based XSS Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html)
+
 ## Challenge: Bonus Payload
 **Categoría OWASP:** A03:2021 – Injection
 
@@ -84,7 +85,7 @@ Esto demuestra que el impacto de una vulnerabilidad XSS no se limita a ejecutar 
 **Mitigación:**
 La mitigación es la misma que en el challenge anterior: eliminar el bypass de sanitización y evitar que los datos controlados por el usuario sean interpretados como HTML cuando la funcionalidad solo requiere mostrar texto.
 
-**Referencia:** [OWASP DOM Based XSS Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html?utm_source=chatgpt.com)
+**Referencia:** [OWASP DOM Based XSS Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html)
 ## Challenge: Confidential Documents
 **Categoría OWASP:** A05:2021 – Security Misconfiguration
 
@@ -120,7 +121,7 @@ También se deben revisar periódicamente los archivos y directorios expuestos p
 
 En este caso, la solución específica sería eliminar el directorio `/ftp/` público y trasladar su contenido legítimo a ubicaciones adecuadas. Los documentos confidenciales no deberían poder accederse directamente mediante una URL pública.
 
-**Referencia:** [OWASP A05:2021 – Security Misconfiguration](https://cheatsheetseries.owasp.org/cheatsheets/File_System_and_Resource_Access_Cheat_Sheet.html?utm_source=chatgpt.com)
+**Referencia:** [OWASP A05:2021 – Security Misconfiguration](https://cheatsheetseries.owasp.org/cheatsheets/File_System_and_Resource_Access_Cheat_Sheet.html)
 ## Challenge: Exposed Metrics
 **Categoría OWASP:** A09:2021 – Security Logging and Monitoring Failures
 
@@ -150,10 +151,11 @@ El acceso debería restringirse mediante controles como autenticación, autoriza
 
 También se debe revisar qué información se expone mediante estos endpoints y evitar incluir datos sensibles o detalles internos que puedan facilitar el reconocimiento de la aplicación.
 
-**Referencia:** [OWASP A09:2021 – Security Logging and Monitoring Failures](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html?utm_source=chatgpt.com)
+**Referencia:** [OWASP A09:2021 – Security Logging and Monitoring Failures](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)
 
 ## Challenge: Login Admin
 **Categoría OWASP:** A05:2025 - Injection
+
 **Descripción:** Lograr un inicio de sesión exitoso al usuario administrador.
 
 **Payload/exploit:**
@@ -199,7 +201,9 @@ En este caso, la estructura de la consulta SQL queda definida por separado y los
 
 ## Challenge: Login Bender
 **Categoría OWASP:** A05:2025 - Injection  
+
 **Descripción:** Lograr un inicio de sesión exitoso utilizando la cuenta de Bender.
+
 **Payload / exploit**: 
 Al encontrar la dirección de correo de Bender en la sección **About Us**, fue posible realizar una inyección SQL añadiendo `'--` al final del email. De esta forma, el comentario SQL evita que se evalúe el resto de la consulta, permitiendo iniciar sesión como Bender.
 
@@ -207,6 +211,7 @@ Al encontrar la dirección de correo de Bender en la sección **About Us**, fue 
 Logré iniciar sesión utilizando la cuenta de Bender.
 
 ![](./images/login-bender.png)
+
 **Análisis técnico y mitigación**: 
 La vulnerabilidad explotada es la misma que en el challenge **Login Admin**: una SQL Injection que permite modificar la consulta de autenticación mediante datos proporcionados por el usuario. Por este motivo, el análisis técnico y las medidas de mitigación son los mismos.
 
@@ -214,6 +219,7 @@ La vulnerabilidad explotada es la misma que en el challenge **Login Admin**: una
 
 ## Challenge: Christmas Special
 **Categoría OWASP:** A05:2025 - Injection
+
 **Descripción:** Encontrar el producto eliminado *Christmas Special* de 2014, agregarlo al carrito y completar su compra.
 
 **Payload / exploit**
@@ -246,6 +252,7 @@ la comilla simple cierra el string de la búsqueda, los dos paréntesis cierran 
 De esta forma, fue posible visualizar también los productos eliminados y encontrar _Christmas Special 2014_.
 
 ![](./images/deleted-item.png)
+
 **Agregar el producto al carrito**: 
 Luego anoté el ID del producto _Christmas Special 2014_. Como el frontend no permitía agregar directamente un producto eliminado al carrito, agregué un producto normal y observé la petición realizada en DevTools → Network.
 
