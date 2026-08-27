@@ -151,3 +151,129 @@ El acceso debería restringirse mediante controles como autenticación, autoriza
 También se debe revisar qué información se expone mediante estos endpoints y evitar incluir datos sensibles o detalles internos que puedan facilitar el reconocimiento de la aplicación.
 
 **Referencia:** [OWASP A09:2021 – Security Logging and Monitoring Failures](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html?utm_source=chatgpt.com)
+
+## Challenge: Login Admin
+**Categoría OWASP:** A05:2025 - Injection
+**Descripción:** Lograr un inicio de sesión exitoso al usuario administrador.
+
+**Payload/exploit:**
+En el campo de email del formulario de login permitió poner una condición SQL de la forma `' OR 1=1 --`
+Este payload modifica la lógica de la consulta original para que la condición 1=1 sea siempre verdadera, permitiendo omitir la validación normal de las credenciales.
+
+**Resultado:**
+Logré iniciar sesión utilizando la cuenta administrador.
+
+![](./images/login-admin.png)
+
+**Análisis técnico:**
+La aplicación es vulnerable a SQL Injection porque la entrada proporcionada por el usuario puede modificar la consulta SQL ejecutada por el servidor.
+
+En lugar de ser tratada únicamente como un valor de email, la entrada se interpreta como parte de la consulta SQL. Al introducir una condición siempre verdadera, es posible alterar la lógica de autenticación y acceder a una cuenta sin conocer sus credenciales.
+
+**Mitigación:**
+La principal medida para prevenir SQL Injection es evitar la construcción de consultas SQL mediante concatenación dinámica de strings. En su lugar, deben utilizarse consultas parametrizadas o prepared statements, de forma que los datos proporcionados por el usuario se traten únicamente como valores y no puedan modificar la estructura de la consulta.
+
+La validación de entradas también puede ayudar a reducir el riesgo, pero no debe utilizarse como única medida de protección. Además, las cuentas utilizadas por la aplicación para acceder a la base de datos deben tener únicamente los permisos necesarios.
+
+**Coding Challenge**
+Para complementar el challenge, realicé el Coding Challenge asociado a la vulnerabilidad.
+
+La vulnerabilidad se encuentra en la construcción de la consulta SQL, donde los valores enviados por el usuario se insertan directamente mediante interpolación de strings:
+
+![](./images/cod-inseguro-LAdmin.png)
+
+```javascript 
+models.sequelize.query( `SELECT * FROM Users WHERE email = '${req.body.email || ''}' AND password = '${security.hash(req.body.password || '')}' AND deletedAt IS NULL`, { model: UserModel, plain: true})
+```
+El problema es que la aplicación incorpora directamente la entrada del usuario dentro de la sintaxis SQL. Por lo tanto, caracteres como comillas (`'`) pueden modificar la estructura original de la consulta en lugar de ser tratados únicamente como parte del valor ingresado.
+
+Por ejemplo, en el challenge **Login Admin**, al introducir el payload: `' OR 1=1 --` la entrada modifica la condición utilizada para buscar al usuario. La comilla cierra el valor original del email, `OR 1=1` agrega una condición siempre verdadera y `--` comenta el resto de la consulta.
+
+*Mitigación*:
+
+![](./images/cod-seguro-LAdmin.png)
+
+En este caso, la estructura de la consulta SQL queda definida por separado y los valores del usuario se insertan posteriormente como parámetros. De esta forma, aunque el usuario introduzca caracteres especiales o código SQL, estos serán tratados como datos y no como parte de la sintaxis de la consulta.
+
+**Referencia:** [OWASP A09:2021 – Security Logging and Monitoring Failures](https://owasp.org/Top10/2025/A05_2025-Injection/)
+
+## Challenge: Login Bender
+**Categoría OWASP:** A05:2025 - Injection  
+**Descripción:** Lograr un inicio de sesión exitoso utilizando la cuenta de Bender.
+### Payload / exploit
+Al encontrar la dirección de correo de Bender en la sección **About Us**, fue posible realizar una inyección SQL añadiendo `'--` al final del email. De esta forma, el comentario SQL evita que se evalúe el resto de la consulta, permitiendo iniciar sesión como Bender.
+
+### Resultado
+Logré iniciar sesión utilizando la cuenta de Bender.
+
+![](./images/login-bender.png)
+### Análisis técnico y mitigación
+La vulnerabilidad explotada es la misma que en el challenge **Login Admin**: una SQL Injection que permite modificar la consulta de autenticación mediante datos proporcionados por el usuario. Por este motivo, el análisis técnico y las medidas de mitigación son los mismos.
+
+**Referencia:** [OWASP A05:2025 – Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+
+## Challenge: Christmas Special
+**Categoría OWASP:** A05:2025 - Injection
+**Descripción:** Encontrar el producto eliminado *Christmas Special* de 2014, agregarlo al carrito y completar su compra.
+
+**Payload / exploit**
+El primer paso fue analizar cómo la aplicación realizaba las búsquedas de productos. Al buscar un producto y observar las peticiones en DevTools, encontré el endpoint:
+```text
+/rest/products/search?q=
+```
+Al introducir una comilla simple (`'`) en el parámetro `q`, la aplicación devolvió un error de SQLite, indicando que la entrada del usuario estaba afectando una consulta SQL.
+
+Para entender la estructura de la consulta, busqué la implementación del endpoint en el repositorio de Juice Shop. Allí encontré:
+```typescript
+models.sequelize.query(
+  `SELECT * FROM Products WHERE ((name LIKE '%${criteria}%' OR description LIKE '%${criteria}%') AND deletedAt IS NULL) ORDER BY name`
+)
+```
+
+La consulta incorpora directamente el valor de `criteria` mediante interpolación de strings. Además, la condición:
+
+```
+AND deletedAt IS NULL
+```
+es la que oculta los productos eliminados.
+
+Al utilizar el payload:
+```
+'))--
+```
+la comilla simple cierra el string de la búsqueda, los dos paréntesis cierran la estructura `WHERE ((` y `--` comenta el resto de la consulta, incluyendo la condición `deletedAt IS NULL`.
+
+De esta forma, fue posible visualizar también los productos eliminados y encontrar _Christmas Special 2014_.
+
+![](./images/deleted-item.png)
+### Agregar el producto al carrito
+Luego anoté el ID del producto _Christmas Special 2014_. Como el frontend no permitía agregar directamente un producto eliminado al carrito, agregué un producto normal y observé la petición realizada en DevTools → Network.
+
+La aplicación utilizaba una petición:
+```
+POST /api/BasketItems/
+```
+
+Copié la petición como cURL, la modifiqué reemplazando el `ProductId` por el ID del producto eliminado (10) y la ejecuté desde la terminal. De esta forma, el producto eliminado fue agregado al carrito.
+
+![](./images/normal-Post.png)
+
+![](./images/post-deletedItem.png)
+
+Finalmente, completé la compra del producto desde el carrito.
+
+**Resultado**
+Logré encontrar el producto eliminado _Christmas Special 2014_, agregarlo al carrito y completar su compra.
+
+![](./images/christmas-success.png)
+
+### Análisis técnico y mitigación
+La vulnerabilidad se debe a que el valor de búsqueda proporcionado por el usuario se concatena directamente dentro de la consulta SQL mediante interpolación:
+```
+'%${criteria}%'
+```
+Esto permite que caracteres especiales introducidos por el usuario modifiquen la estructura de la consulta. En este caso, el payload permitió eliminar la condición que filtraba los productos con `deletedAt IS NULL`.
+
+La mitigación consiste en evitar la construcción dinámica de consultas mediante concatenación o interpolación de strings y utilizar consultas parametrizadas. De esta forma, la entrada del usuario se trata únicamente como un dato y no puede modificar la sintaxis SQL.
+
+**Referencia:** [OWASP A05:2025 – Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
