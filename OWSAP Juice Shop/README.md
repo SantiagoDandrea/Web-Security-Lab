@@ -175,7 +175,7 @@ La principal medida para prevenir SQL Injection es evitar la construcción de co
 
 La validación de entradas también puede ayudar a reducir el riesgo, pero no debe utilizarse como única medida de protección. Además, las cuentas utilizadas por la aplicación para acceder a la base de datos deben tener únicamente los permisos necesarios.
 
-**Coding Challenge**
+**Coding Challenge**: 
 Para complementar el challenge, realicé el Coding Challenge asociado a la vulnerabilidad.
 
 La vulnerabilidad se encuentra en la construcción de la consulta SQL, donde los valores enviados por el usuario se insertan directamente mediante interpolación de strings:
@@ -200,14 +200,14 @@ En este caso, la estructura de la consulta SQL queda definida por separado y los
 ## Challenge: Login Bender
 **Categoría OWASP:** A05:2025 - Injection  
 **Descripción:** Lograr un inicio de sesión exitoso utilizando la cuenta de Bender.
-### Payload / exploit
+**Payload / exploit**: 
 Al encontrar la dirección de correo de Bender en la sección **About Us**, fue posible realizar una inyección SQL añadiendo `'--` al final del email. De esta forma, el comentario SQL evita que se evalúe el resto de la consulta, permitiendo iniciar sesión como Bender.
 
-### Resultado
+**Resultado**: 
 Logré iniciar sesión utilizando la cuenta de Bender.
 
 ![](./images/login-bender.png)
-### Análisis técnico y mitigación
+**Análisis técnico y mitigación**: 
 La vulnerabilidad explotada es la misma que en el challenge **Login Admin**: una SQL Injection que permite modificar la consulta de autenticación mediante datos proporcionados por el usuario. Por este motivo, el análisis técnico y las medidas de mitigación son los mismos.
 
 **Referencia:** [OWASP A05:2025 – Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
@@ -246,7 +246,7 @@ la comilla simple cierra el string de la búsqueda, los dos paréntesis cierran 
 De esta forma, fue posible visualizar también los productos eliminados y encontrar _Christmas Special 2014_.
 
 ![](./images/deleted-item.png)
-### Agregar el producto al carrito
+**Agregar el producto al carrito**: 
 Luego anoté el ID del producto _Christmas Special 2014_. Como el frontend no permitía agregar directamente un producto eliminado al carrito, agregué un producto normal y observé la petición realizada en DevTools → Network.
 
 La aplicación utilizaba una petición:
@@ -267,7 +267,7 @@ Logré encontrar el producto eliminado _Christmas Special 2014_, agregarlo al ca
 
 ![](./images/christmas-success.png)
 
-### Análisis técnico y mitigación
+**Análisis técnico y mitigación**: 
 La vulnerabilidad se debe a que el valor de búsqueda proporcionado por el usuario se concatena directamente dentro de la consulta SQL mediante interpolación:
 ```
 '%${criteria}%'
