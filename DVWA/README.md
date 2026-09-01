@@ -66,7 +66,7 @@ Por lo tanto, la consulta inyectada también debía devolver dos columnas.
 **Payload / exploit**
 
 Probé:
-```sql
+```text
 1' UNION SELECT "test","test"; -- comentario
 ```
 
