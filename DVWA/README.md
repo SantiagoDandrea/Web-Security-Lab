@@ -37,37 +37,75 @@ El payload cierra la comilla del parámetro id, agrega una condición siempre ve
 
 ![](./images/DVWAp2.png)
 
+## SQL Injection - Medium
+
+**Categoría OWASP:** A05:2025 - Injection
+
+**Descripción:** Explotar la protección implementada en el nivel Medium para obtener información de múltiples usuarios.
+
+**Análisis**
+
+A diferencia de Low, el formulario utiliza un menú desplegable y envía el parámetro mediante `POST`. Además, el código aplica `mysqli_real_escape_string()` sobre el valor recibido.
+
+La petición manda el `id` junto con un string `Submit` que podemos modificar.
+
+![](./images/DVWAsqliM1.png)
+
+Sin embargo, la consulta se construye de la siguiente manera:
+
+```sql
+SELECT first_name, last_name FROM users WHERE user_id = $id;
+```
+
+A diferencia de Low, el parámetro id no está entre comillas. Por lo tanto, aunque se aplique mysqli_real_escape_string(), todavía es posible introducir una expresión SQL válida.
+
+**Payload / exploit**
+
+Modifiqué la petición POST para enviar:
+
+```
+1 OR 1=1
+```
+![](./images/DVWAsqliM2.png)
+
+La consulta resultante queda:
+
+```sql
+SELECT first_name, last_name
+FROM users
+WHERE user_id = 1 OR 1=1;
+```
+
+Como 1=1 siempre es verdadero, la aplicación devolvió los datos de los cinco usuarios.
+
 **Resultado**
 
-Fue posible modificar la consulta SQL y obtener los datos de todos los usuarios de la tabla.
+Fue posible modificar la condición WHERE y obtener los datos de todos los usuarios.
+
+![](./images/DVWAsqliM2res.png)
 
 **Mitigación**
 
 La vulnerabilidad se puede evitar utilizando consultas parametrizadas / prepared statements, de manera que la entrada del usuario sea tratada como un dato y no pueda modificar la estructura de la consulta SQL.
 
-Referencia: [OWASP A05:2025 – Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+Referencia: OWASP A05:2025 – Injection
 
-## SQL Injection - UNION-based - Low
+## SQL Injection - UNION-based - Medium
 
-**Descripción:** Utilizar una inyección basada en `UNION` para agregar resultados propios a los obtenidos por la consulta original.
+Descripción: Utilizar una inyección basada en UNION para obtener información adicional de la tabla users.
 
 **Análisis**
 
-Después de comprobar la SQL Injection básica, revisé el apartado **Help** de DVWA, donde se indica que el nivel Low permite escapar de la consulta y ejecutar una consulta SQL adicional mediante `UNION SELECT`.
+Una vez comprobada la inyección anterior, utilicé UNION SELECT para consultar otras columnas de la tabla users.
 
-La consulta original devuelve dos columnas:
-
-```sql
-SELECT first_name, last_name FROM users WHERE user_id = '$id';
-```
-
-Por lo tanto, la consulta inyectada también debía devolver dos columnas.
+Como la consulta original devuelve dos columnas (first_name y last_name), el UNION también debía devolver dos columnas.
 
 **Payload / exploit**
 
-Probé:
-```text
-1' UNION SELECT "test","test"; -- comentario
+Utilicé:
+
+```sql
+1 UNION SELECT user, password FROM users
 ```
 
 La consulta resultante queda conceptualmente como:
@@ -75,23 +113,23 @@ La consulta resultante queda conceptualmente como:
 ```sql
 SELECT first_name, last_name
 FROM users
-WHERE user_id = '1'
+WHERE user_id = 1
 UNION
-SELECT "test","test";
+SELECT user, password FROM users;
 ```
 
-La primera comilla cierra el valor original de id, UNION SELECT agrega una segunda consulta con dos columnas y -- comenta el resto de la consulta original.
+De esta forma, la primera columna del resultado muestra el nombre de usuario y la segunda la contraseña almacenada.
 
-![](./images/UNIONp1.png)
+![](./images/UNIONsqliM1.png)
 
 **Resultado**
 
-La aplicación devolvió tanto el resultado de la consulta original como el registro generado mediante UNION SELECT, mostrando test como nombre y apellido.
+Fue posible utilizar la vulnerabilidad para obtener los nombres de usuario y las contraseñas almacenadas de los cinco usuarios de la base de datos.
 
-Esto confirmó que era posible utilizar la vulnerabilidad para incorporar resultados arbitrarios a la respuesta de la consulta original.
+**Mitigación**
 
 La mitigación es la misma indicada en el apartado anterior: utilizar consultas parametrizadas / prepared statements para evitar que la entrada del usuario pueda modificar la estructura de la consulta SQL.
 
-Referencia: OWASP [A05:2025 – Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+Referencia: OWASP A05:2025 – Injection
 
 
