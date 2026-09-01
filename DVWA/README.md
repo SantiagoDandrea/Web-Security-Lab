@@ -57,7 +57,7 @@ Después de comprobar la SQL Injection básica, revisé el apartado **Help** de 
 
 La consulta original devuelve dos columnas:
 
-```sql
+```
 SELECT first_name, last_name FROM users WHERE user_id = '$id';
 ```
 
