@@ -1,5 +1,5 @@
 # Vulnerabilidades de DVWA
-## SQL Injection — Low
+## SQL Injection - Low
 
 **Categoría OWASP:** A05:2025 - Injection
 
@@ -47,7 +47,7 @@ La vulnerabilidad se puede evitar utilizando consultas parametrizadas / prepared
 
 Referencia: [OWASP A05:2025 – Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
 
-## SQL Injection — UNION-based
+## SQL Injection - UNION-based - Low
 
 **Descripción:** Utilizar una inyección basada en `UNION` para agregar resultados propios a los obtenidos por la consulta original.
 
