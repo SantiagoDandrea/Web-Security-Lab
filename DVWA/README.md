@@ -45,4 +45,4 @@ Fue posible modificar la consulta SQL y obtener los datos de todos los usuarios 
 
 La vulnerabilidad se puede evitar utilizando consultas parametrizadas / prepared statements, de manera que la entrada del usuario sea tratada como un dato y no pueda modificar la estructura de la consulta SQL.
 
-Referencia: OWASP A05:2025 – Injection
+Referencia: [OWASP A05:2025 – Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
