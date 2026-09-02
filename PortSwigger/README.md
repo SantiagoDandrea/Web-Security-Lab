@@ -1,6 +1,6 @@
 # Labs PortSwigger
 
-##Lab: Reflected XSS into HTML context with nothing encoded
+## Lab: Reflected XSS into HTML context with nothing encoded
 
 **Descripción:** Realizar un ataque XSS reflejado que permita ejecutar la función `alert()`.
 
@@ -121,3 +121,59 @@ La principal mitigación es evitar utilizar sinks inseguros como `document.write
 También es recomendable aplicar **output encoding** según el contexto y utilizar una **Content Security Policy (CSP)** como capa adicional de defensa.
 
 Referencia: [PortSwigger Web Security Academy – DOM XSS](https://portswigger.net/web-security/cross-site-scripting/dom-based)
+
+## Lab: Reflected XSS into attribute with angle brackets HTML-encoded
+
+**Descripción:** Realizar un ataque Reflected XSS dentro de un atributo HTML para ejecutar la función `alert()`.
+
+**Análisis**
+
+En este caso, el contenido de la búsqueda se refleja dentro del atributo `value` de un elemento HTML.
+
+La aplicación realiza HTML encoding de los caracteres `<` y `>`, por lo que no es posible utilizar directamente una etiqueta como `<script>`. Sin embargo, las comillas no son codificadas correctamente, permitiendo escapar del atributo `value` y agregar nuevos atributos HTML.
+
+La estructura generada por la aplicación es conceptualmente:
+
+```html
+<input type="text" name="search" value="INPUT">
+```
+
+Por lo tanto, el objetivo es cerrar el atributo `value` y utilizar un event handler para ejecutar JavaScript.
+
+**Payload / exploit**
+
+Utilicé:
+
+```text
+" autofocus onfocus=alert(document.domain) x="
+```
+
+El HTML resultante queda conceptualmente como:
+
+```html
+<input type="text" name="search" value="" autofocus onfocus="alert(document.domain)" x="">
+```
+
+La primera comilla cierra el atributo `value`, permitiendo agregar nuevos atributos al elemento.
+
+`autofocus` hace que el campo reciba automáticamente el foco y `onfocus` ejecuta `alert(document.domain)` cuando esto ocurre.
+
+El último `x="` permite cerrar nuevamente la estructura del atributo.
+
+![](./images/PSXSS4.png)
+
+**Resultado**
+
+Fue posible ejecutar JavaScript mediante un atributo HTML controlado por el usuario, a pesar de que los caracteres `<` y `>` estaban codificados.
+
+Este laboratorio demuestra que la mitigación debe tener en cuenta el **contexto en el que se inserta el dato**. En este caso, realizar únicamente HTML encoding de los caracteres `<` y `>` no fue suficiente, ya que las comillas permitieron escapar del atributo `value`.
+
+**Mitigación**
+
+La aplicación debe realizar un **output encoding adecuado al contexto HTML**, incluyendo el tratamiento de caracteres que permitan escapar de los atributos, como las comillas.
+
+También es recomendable utilizar mecanismos seguros para insertar datos en atributos y evitar construir HTML mediante concatenación de contenido controlado por el usuario.
+
+Una **Content Security Policy (CSP)** puede utilizarse como capa adicional de defensa, pero no sustituye el correcto output encoding.
+
+Referencia: [PortSwigger Web Security Academy – XSS contexts](https://portswigger.net/web-security/cross-site-scripting/contexts)
