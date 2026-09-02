@@ -1,8 +1,6 @@
 # Labs PortSwigger
 
-## Reflected XSS
-
-### Reflected XSS into HTML context with nothing encoded
+##Lab: Reflected XSS into HTML context with nothing encoded
 
 **Descripción:** Realizar un ataque XSS reflejado que permita ejecutar la función `alert()`.
 
@@ -81,3 +79,45 @@ La mitigación principal es realizar **output encoding** del contenido almacenad
 También puede utilizarse una **Content Security Policy (CSP)** como capa adicional de defensa, aunque no reemplaza el correcto tratamiento del contenido antes de mostrarlo.
 
 Referencia: [PortSwigger Web Security Academy – Stored XSS](https://portswigger.net/web-security/cross-site-scripting/stored)
+
+## Lab: DOM XSS in `document.write` sink using `location.search`
+
+**Descripción:** Realizar un ataque DOM XSS utilizando el parámetro de búsqueda para ejecutar la función `alert()`.
+
+**Análisis**
+
+En este caso, el código vulnerable se encuentra del lado del cliente. El valor introducido en el buscador se obtiene desde `location.search` y posteriormente se utiliza mediante `document.write()` para modificar el contenido de la página.
+
+A diferencia de los casos anteriores, el servidor no necesita reflejar ni almacenar el payload. El propio JavaScript de la página procesa el valor controlado por el usuario y lo inserta directamente en el DOM.
+
+En este caso:
+- **Source:** `location.search`
+- **Sink:** `document.write()`
+
+![](./images/PSDOMXSS1.png)
+
+**Payload / exploit**
+
+Utilicé el buscador para introducir un payload que pudiera ser interpretado como HTML:
+
+```text
+"><img src=x onerror=alert()>
+```
+
+El contenido ingresado fue tomado desde `location.search` y posteriormente incorporado mediante `document.write()`, provocando que el navegador interpretara la etiqueta `img` y ejecutara `alert()` mediante el evento `onerror`.
+
+![](./images/PSDOMXSS2.png)
+
+**Resultado**
+
+Fue posible ejecutar código JavaScript mediante una manipulación del DOM realizada directamente por el código JavaScript del cliente.
+
+Este laboratorio demuestra una variante de **DOM XSS**, donde la vulnerabilidad se produce por el flujo de datos desde un **source** controlado por el usuario hacia un **sink** peligroso, sin necesidad de que el servidor procese el payload.
+
+**Mitigación**
+
+La principal mitigación es evitar utilizar sinks inseguros como `document.write()` con datos controlados por el usuario. Cuando sea necesario insertar contenido dinámico, se deben utilizar métodos que traten el contenido como texto, como `textContent`, en lugar de interpretarlo como HTML.
+
+También es recomendable aplicar **output encoding** según el contexto y utilizar una **Content Security Policy (CSP)** como capa adicional de defensa.
+
+Referencia: [PortSwigger Web Security Academy – DOM XSS](https://portswigger.net/web-security/cross-site-scripting/dom-based)
