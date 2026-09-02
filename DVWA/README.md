@@ -176,7 +176,7 @@ SELECT user,password FROM users
 
 El `UNION SELECT` utiliza las columnas `user` y `password` de la tabla `users`, por lo que los resultados mostrados como `First name` y `Surname` corresponden en realidad al nombre de usuario y al valor almacenado en `password`.
 
-(capH1)
+![](./images/DVWAsqliH1.png)
 
 **Resultado**
 
