@@ -1,5 +1,17 @@
 # Labs PortSwigger
 
+## Mitigaciones generales contra XSS
+
+Las principales medidas utilizadas para prevenir XSS dependen del contexto en el que se procesa el contenido:
+
+- **Output encoding:** tratar los datos controlados por el usuario como texto antes de insertarlos en HTML, atributos o JavaScript.
+- **Context-aware encoding:** utilizar el tratamiento adecuado según el contexto donde se inserta el dato.
+- **Evitar sinks peligrosos:** no utilizar funciones como `document.write()` con contenido controlado por el usuario.
+- **HttpOnly:** impedir que JavaScript pueda acceder directamente a cookies de sesión.
+- **Content Security Policy (CSP):** utilizar una política restrictiva como capa adicional de defensa frente a la ejecución de contenido no autorizado.
+
+Estas medidas no son intercambiables: cada una protege frente a un aspecto diferente del problema.
+
 ## Lab: Reflected XSS into HTML context with nothing encoded
 
 **Descripción:** Realizar un ataque XSS reflejado que permita ejecutar la función `alert()`.
@@ -34,13 +46,9 @@ Fue posible ejecutar código JavaScript mediante una entrada reflejada en la res
 
 **Mitigación**
 
-La principal mitigación es realizar **output encoding** de los datos antes de insertarlos en la respuesta, de manera que el contenido proporcionado por el usuario sea interpretado como texto y no como código HTML o JavaScript.
+La principal mitigación es realizar **output encoding según el contexto** antes de insertar datos controlados por el usuario en la respuesta HTML.
 
-En este caso, caracteres especiales como `<` y `>` deberían codificarse antes de incluir el valor de búsqueda en el HTML.
-
-También es recomendable utilizar una **Content Security Policy (CSP)** como capa adicional de defensa, aunque no sustituye al output encoding adecuado.
-
-Referencia: [PortSwigger Web Security Academy – Reflected XSS](https://portswigger.net/web-security/cross-site-scripting/reflected)
+En este caso, los caracteres que puedan ser interpretados como HTML deben codificarse para que el contenido sea tratado como texto y no como código.
 
 ## Lab: Stored XSS into HTML context with nothing encoded
 
@@ -74,9 +82,9 @@ Esto demuestra la diferencia principal con el **Reflected XSS** anterior: el pay
 
 **Mitigación**
 
-La mitigación principal es realizar **output encoding** del contenido almacenado antes de insertarlo en el HTML, de manera que sea interpretado como texto y no como código HTML o JavaScript.
+La principal mitigación es realizar **output encoding según el contexto** antes de mostrar el contenido almacenado, de manera que sea interpretado como texto y no como código HTML o JavaScript.
 
-También puede utilizarse una **Content Security Policy (CSP)** como capa adicional de defensa, aunque no reemplaza el correcto tratamiento del contenido antes de mostrarlo.
+En este caso, el contenido almacenado debe tratarse como datos no confiables cada vez que se inserta en la respuesta.
 
 Referencia: [PortSwigger Web Security Academy – Stored XSS](https://portswigger.net/web-security/cross-site-scripting/stored)
 
@@ -116,9 +124,11 @@ Este laboratorio demuestra una variante de **DOM XSS**, donde la vulnerabilidad 
 
 **Mitigación**
 
-La principal mitigación es evitar utilizar sinks inseguros como `document.write()` con datos controlados por el usuario. Cuando sea necesario insertar contenido dinámico, se deben utilizar métodos que traten el contenido como texto, como `textContent`, en lugar de interpretarlo como HTML.
+La principal mitigación es evitar utilizar sinks inseguros como `document.write()` con datos controlados por el usuario.
 
-También es recomendable aplicar **output encoding** según el contexto y utilizar una **Content Security Policy (CSP)** como capa adicional de defensa.
+Cuando sea necesario insertar contenido dinámico, se deben utilizar métodos que traten el contenido como texto, como `textContent`, en lugar de interpretarlo como HTML.
+
+También es importante analizar el flujo de datos desde el **source** hasta el **sink** y aplicar un tratamiento seguro antes de que el dato llegue a una función capaz de interpretarlo como código o HTML.
 
 Referencia: [PortSwigger Web Security Academy – DOM XSS](https://portswigger.net/web-security/cross-site-scripting/dom-based)
 
@@ -170,11 +180,9 @@ Este laboratorio demuestra que la mitigación debe tener en cuenta el **contexto
 
 **Mitigación**
 
-La aplicación debe realizar un **output encoding adecuado al contexto HTML**, incluyendo el tratamiento de caracteres que permitan escapar de los atributos, como las comillas.
+La aplicación debe realizar un **output encoding adecuado al contexto del atributo HTML**, incluyendo el tratamiento de caracteres que permitan escapar del atributo, como las comillas.
 
 También es recomendable utilizar mecanismos seguros para insertar datos en atributos y evitar construir HTML mediante concatenación de contenido controlado por el usuario.
-
-Una **Content Security Policy (CSP)** puede utilizarse como capa adicional de defensa, pero no sustituye el correcto output encoding.
 
 Referencia: [PortSwigger Web Security Academy – XSS contexts](https://portswigger.net/web-security/cross-site-scripting/contexts)
 
@@ -220,9 +228,9 @@ Este laboratorio demuestra que el contexto en el que se inserta el contenido es 
 
 **Mitigación**
 
-La aplicación debe evitar insertar directamente datos controlados por el usuario dentro de código JavaScript. Cuando sea necesario incluir datos dinámicos, deben utilizarse mecanismos seguros de serialización y **output encoding adecuado al contexto JavaScript**.
+La aplicación debe evitar insertar directamente datos controlados por el usuario dentro de código JavaScript.
 
-También es recomendable utilizar una **Content Security Policy (CSP)** como capa adicional de defensa, aunque no sustituye el correcto tratamiento de los datos.
+Cuando sea necesario incluir datos dinámicos, deben utilizarse mecanismos seguros de serialización y **output encoding adecuado al contexto JavaScript**.
 
 Referencia: [PortSwigger Web Security Academy – XSS contexts](https://portswigger.net/web-security/cross-site-scripting/contexts)
 
@@ -280,4 +288,4 @@ Set-Cookie: session=...; HttpOnly
 
 De esta forma, la cookie continúa siendo enviada automáticamente en las peticiones correspondientes, pero no puede ser accedida mediante `document.cookie`.
 
-Esta medida debe complementarse con las mitigaciones propias de XSS, principalmente realizar un correcto output encoding según el contexto y utilizar una Content Security Policy (CSP) adecuada.
+Esta medida debe complementarse con las mitigaciones propias de XSS, principalmente realizar un correcto output encoding según el contexto.
