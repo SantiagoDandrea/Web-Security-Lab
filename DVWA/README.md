@@ -132,4 +132,60 @@ La mitigación es la misma indicada en el apartado anterior: utilizar consultas 
 
 Referencia: OWASP A05:2025 – Injection
 
+## SQL Injection - UNION-based - High
 
+**Categoría OWASP:** A05:2025 - Injection
+
+**Descripción:** Explotar la SQL Injection del nivel High para obtener las contraseñas de los cinco usuarios de la base de datos.
+
+**Objetivo**
+
+El apartado **Help** indica que existen cinco usuarios en la base de datos, con IDs del 1 al 5, y que el objetivo es obtener sus contraseñas mediante SQL Injection.
+
+**Análisis**
+
+En este nivel, el valor ingresado se transfiere mediante una variable de sesión antes de llegar a la consulta vulnerable. `session-input.php` almacena el valor proporcionado en `$_SESSION['id']`, que posteriormente es utilizado por `high.php`.
+
+La consulta contiene además `LIMIT 1`:
+
+```sql
+SELECT first_name, last_name
+FROM users
+WHERE user_id = '$id'
+LIMIT 1;
+```
+
+Como el valor de `id` continúa llegando directamente a la consulta, fue posible utilizar `-- -` para comentar la parte restante de la sentencia y eliminar el `LIMIT 1`.
+
+Una vez comprobado el funcionamiento, utilicé el siguiente payload para cumplir el objetivo del ejercicio:
+
+```text
+1' UNION SELECT user,password FROM users -- -
+```
+
+La consulta resultante queda conceptualmente como:
+
+```sql
+SELECT first_name, last_name
+FROM users
+WHERE user_id = '1'
+UNION
+SELECT user,password FROM users
+-- - LIMIT 1;
+```
+
+El `UNION SELECT` utiliza las columnas `user` y `password` de la tabla `users`, por lo que los resultados mostrados como `First name` y `Surname` corresponden en realidad al nombre de usuario y al valor almacenado en `password`.
+
+(capH1)
+
+**Resultado**
+
+Fue posible obtener mediante SQL Injection los cinco nombres de usuario y los valores almacenados en la columna `password`, cumpliendo el objetivo indicado por DVWA.
+
+Este nivel muestra que utilizar una variable de sesión como intermediaria no impide la SQL Injection cuando el valor controlado por el usuario termina siendo concatenado directamente en una consulta vulnerable.
+
+**Mitigación**
+
+La mitigación es la misma indicada en los niveles anteriores: utilizar consultas parametrizadas / prepared statements para evitar que la entrada del usuario pueda modificar la estructura de la consulta SQL.
+
+Referencia: OWASP A05:2025 – Injection
