@@ -28,7 +28,7 @@ La respuesta de la aplicación quedó conceptualmente:
 
 Al interpretar el HTML, el navegador reconoce la etiqueta `<script>` y ejecuta el código JavaScript contenido en ella.
 
-![](./images/PortSwiggerReflectedXSS1.png)
+![](./images/PSXSS1r.png)
 
 **Resultado**
 
