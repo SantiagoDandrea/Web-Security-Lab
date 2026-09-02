@@ -177,3 +177,51 @@ También es recomendable utilizar mecanismos seguros para insertar datos en atri
 Una **Content Security Policy (CSP)** puede utilizarse como capa adicional de defensa, pero no sustituye el correcto output encoding.
 
 Referencia: [PortSwigger Web Security Academy – XSS contexts](https://portswigger.net/web-security/cross-site-scripting/contexts)
+
+## Lab: Reflected XSS into a JavaScript string with angle brackets HTML-encoded
+
+**Descripción:** Realizar un ataque Reflected XSS dentro de una cadena JavaScript para ejecutar la función `alert()`.
+
+**Análisis**
+
+En este caso, el contenido de la búsqueda se refleja dentro de una cadena JavaScript.
+
+El código de la aplicación utiliza el valor ingresado para construir una variable:
+
+```javascript
+var searchTerms = 'INPUT';
+```
+
+Aunque los caracteres `<` y `>` están HTML-encoded, la entrada continúa siendo utilizada directamente dentro de una cadena JavaScript. Por lo tanto, es posible cerrar la cadena e insertar código JavaScript.
+
+**Payload / exploit**
+
+Utilicé:
+
+```text
+'; alert() //
+```
+
+El código resultante queda conceptualmente como:
+
+```javascript
+var searchTerms = ''; alert() //';
+```
+
+La primera comilla del payload cierra el string JavaScript original. El `;` termina la instrucción y permite ejecutar `alert()` como una nueva instrucción. Finalmente, `//` comenta el resto de la línea, evitando que la comilla agregada originalmente por la aplicación genere un error de sintaxis.
+
+**Resultado**
+
+Fue posible ejecutar código JavaScript mediante una entrada reflejada dentro de una cadena JavaScript, a pesar de que los caracteres `<` y `>` estaban codificados.
+
+![](./images/PSXSSJS1.png)
+
+Este laboratorio demuestra que el contexto en el que se inserta el contenido es fundamental para analizar una vulnerabilidad XSS. En este caso, el problema no estaba en la interpretación de HTML, sino en la posibilidad de escapar de una cadena JavaScript.
+
+**Mitigación**
+
+La aplicación debe evitar insertar directamente datos controlados por el usuario dentro de código JavaScript. Cuando sea necesario incluir datos dinámicos, deben utilizarse mecanismos seguros de serialización y **output encoding adecuado al contexto JavaScript**.
+
+También es recomendable utilizar una **Content Security Policy (CSP)** como capa adicional de defensa, aunque no sustituye el correcto tratamiento de los datos.
+
+Referencia: [PortSwigger Web Security Academy – XSS contexts](https://portswigger.net/web-security/cross-site-scripting/contexts)
