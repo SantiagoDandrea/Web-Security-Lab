@@ -289,3 +289,155 @@ Set-Cookie: session=...; HttpOnly
 De esta forma, la cookie continúa siendo enviada automáticamente en las peticiones correspondientes, pero no puede ser accedida mediante `document.cookie`.
 
 Esta medida debe complementarse con las mitigaciones propias de XSS, principalmente realizar un correcto output encoding según el contexto.
+
+## Lab: 2FA simple bypass
+
+**Descripción:** Explotar un bypass de autenticación de dos factores para acceder a la cuenta de un usuario sin conocer su código 2FA.
+
+**Análisis**
+
+El laboratorio proporciona unas credenciales válidas:
+
+```text
+carlos:montoya
+```
+
+El problema se encuentra en la forma en que la aplicación implementa el segundo factor. PortSwigger explica que algunas aplicaciones consideran al usuario autenticado después de validar correctamente el nombre de usuario y la contraseña, antes de completar la verificación 2FA.
+
+Por lo tanto, después de iniciar sesión con las credenciales proporcionadas, en lugar de completar el código de verificación, accedí directamente a la página principal de la cuenta.
+
+El servidor permitió acceder a la cuenta sin solicitar un código 2FA válido.
+
+**Resultado**
+
+Fue posible acceder a la cuenta de Carlos sin conocer ni proporcionar su código de autenticación de dos factores.
+
+Esto demuestra que la aplicación no estaba verificando correctamente el segundo factor antes de considerar autenticada la sesión.
+
+**Mitigación**
+
+La aplicación debe mantener al usuario en un estado de autenticación incompleta hasta que todos los factores requeridos hayan sido verificados. El acceso a recursos autenticados debe depender de la validación exitosa del segundo factor y no solamente de las credenciales principales.
+
+Referencia: [PortSwigger Web Security Academy – 2FA simple bypass](https://portswigger.net/web-security/authentication/multi-factor/lab-2fa-simple-bypass)
+
+## Lab: Password reset broken logic
+
+**Descripción:** Explotar una vulnerabilidad en el mecanismo de recuperación de contraseña para modificar la contraseña de otro usuario.
+
+**Análisis**
+
+El laboratorio proporciona las credenciales:
+
+```text
+wiener:peter
+```
+
+y establece como objetivo modificar la contraseña del usuario `carlos` para posteriormente acceder a su cuenta.
+
+La aplicación proporciona acceso al correo de Wiener. Al solicitar un cambio de contraseña, se recibe un enlace que contiene un token aleatorio para acceder al formulario de recuperación.
+
+El problema se encuentra en el propio formulario de cambio de contraseña. El HTML contiene un parámetro `value` asociado al nombre del usuario:
+
+```html
+value="wiener"
+```
+
+![](./images/PS-RP1.png)
+
+Este valor es enviado nuevamente por el formulario al servidor y puede ser modificado. Por lo tanto, cambié `value="wiener"` por `value="carlos"` antes de enviar la solicitud de cambio de contraseña.
+
+La aplicación aceptó el nombre de usuario modificado y permitió establecer una nueva contraseña para Carlos.
+
+**Resultado**
+
+Fue posible modificar la contraseña de Carlos utilizando el mecanismo de recuperación de contraseña destinado originalmente a Wiener y posteriormente acceder a su cuenta.
+
+La vulnerabilidad se produce porque el servidor confía en un valor controlado por el cliente para determinar qué cuenta debe modificarse.
+
+**Mitigación**
+
+La identidad del usuario cuya contraseña se está restableciendo debe estar vinculada de forma segura al proceso de recuperación y no depender de parámetros modificables enviados por el cliente.
+
+Los tokens de recuperación deben ser únicos, impredecibles, de un solo uso y estar asociados al usuario correspondiente. Además, el servidor debe validar que el proceso de recuperación corresponde realmente a la cuenta autorizada.
+
+Referencia: [PortSwigger Web Security Academy – Password reset broken logic](https://portswigger.net/web-security/authentication/other-mechanisms/lab-password-reset-broken-logic)
+
+## Lab: User ID controlled by request parameter
+
+**Descripción:** Explotar una vulnerabilidad de control de acceso que permite acceder a la información de otro usuario modificando un identificador controlado por el cliente.
+
+**Análisis**
+
+El laboratorio presenta una vulnerabilidad de **horizontal privilege escalation** en la página de cuenta de usuario.
+
+El objetivo es obtener la API key del usuario `carlos`. Para ello, primero inicié sesión con las credenciales proporcionadas:
+
+```text
+wiener:peter
+```
+
+La página **My Account** mostraba la API key correspondiente al usuario autenticado.
+
+Al inspeccionar la petición `GET` utilizada para obtener los datos de la cuenta, observé que el usuario estaba determinado mediante un parámetro `id` que podía ser modificado.
+
+![dsa](./images/PS-UIDmod.png)
+
+## Lab: JWT authentication bypass via unverified signature
+
+**Descripción:** Explotar una implementación incorrecta de JWT que permite modificar el contenido del token sin que el servidor verifique su firma.
+
+**Análisis**
+
+El laboratorio utiliza un mecanismo basado en **JSON Web Tokens (JWT)** para gestionar las sesiones.
+
+Las credenciales proporcionadas son:
+
+```text
+wiener:peter
+```
+
+El objetivo es modificar el token de sesión para acceder al panel `/admin` y eliminar al usuario `carlos`.
+
+Después de iniciar sesión, la petición `GET` a `/my-account` contenía el JWT utilizado para identificar la sesión. Al decodificar su contenido, observé que el campo `sub` identificaba al usuario:
+
+```text
+sub=wiener
+```
+
+![](./images/PS-JWT1.png)
+
+El laboratorio indica que el servidor no verifica la firma de los JWT recibidos. Por lo tanto, modifiqué el valor del campo `sub` para que identificara al usuario administrador:
+
+```text
+sub=administrator
+```
+
+Con el token modificado, accedí al endpoint:
+
+```text
+/admin
+```
+
+La aplicación respondió con el panel de administración, que contenía enlaces para eliminar usuarios, entre ellos:
+
+```html
+<a href="/admin/delete?username=carlos">
+```
+
+Finalmente, utilicé el mismo JWT modificado para realizar una petición al endpoint que elimina al usuario Carlos.
+
+![](./images/PS-JWT2.png)
+
+**Resultado**
+
+Fue posible modificar el contenido del JWT y utilizarlo para acceder al panel de administración sin disponer de las credenciales del administrador.
+
+El problema principal es que el servidor aceptaba el token sin verificar correctamente su firma. Como consecuencia, podía confiar en un valor `sub` modificado por el cliente y utilizarlo para determinar la identidad y los privilegios de la sesión.
+
+**Mitigación**
+
+El servidor debe verificar correctamente la firma de todos los JWT antes de confiar en cualquiera de sus claims. También debe validar el algoritmo utilizado y comprobar que los claims relevantes sean válidos y apropiados para la operación solicitada.
+
+Además, la autorización debe realizarse **server-side** y no depender únicamente de valores proporcionados dentro del token sin una validación criptográfica adecuada.
+
+Referencia: [PortSwigger Web Security Academy – JWT authentication bypass via unverified signature](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-unverified-signature)
