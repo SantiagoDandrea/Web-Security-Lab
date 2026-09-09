@@ -1,4 +1,15 @@
 # OWASP Juice Shop - Challenges
+
+## 📑 Tabla de Contenidos
+- [Challenge: Score Board](#challenge-score-board)
+- [Challenge: DOM XSS](#challenge-dom-xss)
+- [Challenge: Bonus Payload](#challenge-bonus-payload)
+- [Challenge: Confidential Documents](#challenge-confidential-documents)
+- [Challenge: Exposed Metrics](#challenge-exposed-metrics)
+- [Challenge: Login Admin](#challenge-login-admin)
+- [Challenge: Login Bender](#challenge-login-bender)
+- [Challenge: Christmas Special](#challenge-christmas-special)
+
 ## Challenge: Score Board
 **Categoría OWASP:** A05:2021 – Security Misconfiguration
 
