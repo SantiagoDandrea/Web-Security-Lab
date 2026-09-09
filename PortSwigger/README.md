@@ -449,6 +449,7 @@ Finalmente, utilicé el mismo JWT modificado para realizar una petición al endp
 
 ![](./images/PS-JWT2.png)
 
+
 **Resultado**
 
 Fue posible modificar el contenido del JWT y utilizarlo para acceder al panel de administración sin disponer de las credenciales del administrador.
