@@ -1,4 +1,12 @@
 # Vulnerabilidades de DVWA
+
+## 📑 Tabla de Contenidos
+- [SQL Injection - Low](#sql-injection---low)
+- [SQL Injection - Medium](#sql-injection---medium)
+- [SQL Injection - UNION-based - Medium](#sql-injection---union-based---medium)
+- [SQL Injection - UNION-based - High](#sql-injection---union-based---high)
+- [SQL Injection (Blind) - High](#sql-injection-blind---high)
+
 ## SQL Injection - Low
 
 **Categoría OWASP:** A05:2025 - Injection
