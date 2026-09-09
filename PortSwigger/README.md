@@ -1,5 +1,18 @@
 # Labs PortSwigger
 
+## 📑 Tabla de Contenidos
+- [Mitigaciones generales contra XSS](#mitigaciones-generales-contra-xss)
+- [Lab: Reflected XSS into HTML context with nothing encoded](#lab-reflected-xss-into-html-context-with-nothing-encoded)
+- [Lab: Stored XSS into HTML context with nothing encoded](#lab-stored-xss-into-html-context-with-nothing-encoded)
+- [Lab: DOM XSS in document.write sink using location.search](#lab-dom-xss-in-documentwrite-sink-using-locationsearch)
+- [Lab: Reflected XSS into attribute with angle brackets HTML-encoded](#lab-reflected-xss-into-attribute-with-angle-brackets-html-encoded)
+- [Lab: Reflected XSS into a JavaScript string with angle brackets HTML-encoded](#lab-reflected-xss-into-a-javascript-string-with-angle-brackets-html-encoded)
+- [Cross-Site Scripting - Stored XSS - Stealing Cookies](#cross-site-scripting---stored-xss---stealing-cookies)
+- [Lab: 2FA simple bypass](#lab-2fa-simple-bypass)
+- [Lab: Password reset broken logic](#lab-password-reset-broken-logic)
+- [Lab: User ID controlled by request parameter](#lab-user-id-controlled-by-request-parameter)
+- [Lab: JWT authentication bypass via unverified signature](#lab-jwt-authentication-bypass-via-unverified-signature)
+
 ## Mitigaciones generales contra XSS
 
 Las principales medidas utilizadas para prevenir XSS dependen del contexto en el que se procesa el contenido:
