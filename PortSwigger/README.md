@@ -380,7 +380,28 @@ La página **My Account** mostraba la API key correspondiente al usuario autenti
 
 Al inspeccionar la petición `GET` utilizada para obtener los datos de la cuenta, observé que el usuario estaba determinado mediante un parámetro `id` que podía ser modificado.
 
-![dsa](./images/PS-UIDmod.png)
+![](./images/PS-UIDmod.png)
+
+Cambié el valor del parámetro de wiener a carlos y envié nuevamente la petición.
+
+![](./images/PS-UID2.png)
+
+La aplicación respondió con los datos correspondientes a la cuenta de Carlos, incluyendo su API key.
+
+**Resultado**
+
+Fue posible acceder a información perteneciente a otro usuario simplemente modificando un identificador proporcionado en la petición.
+
+Esto constituye una vulnerabilidad de **IDOR (Insecure Direct Object Reference)**, ya que el servidor no verificó que el usuario autenticado tuviera autorización para acceder al objeto solicitado.
+
+**Mitigación**
+
+El servidor debe validar siempre que el usuario autenticado tenga autorización para acceder al recurso solicitado. No debe confiar en que un identificador proporcionado por el cliente determine por sí solo qué información puede consultar.
+
+Los controles de autorización deben realizarse **server-side** para cada recurso, independientemente de que el identificador sea predecible o no.
+
+Referencia: PortSwigger Web Security Academy – User ID controlled by request parameter
+
 
 ## Lab: JWT authentication bypass via unverified signature
 
