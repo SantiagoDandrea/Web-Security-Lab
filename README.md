@@ -1,6 +1,6 @@
 # Web Application Security Lab
 
-Este repositorio centraliza mis prácticas y laboratorios de análisis de vulnerabilidades web, seguridad en el desarrollo y validación de datos. El objetivo principal es comprender cómo las fallas en el procesamiento de inputs y la mala configuración de aplicaciones permiten la explotación de sistemas, haciendo foco en la identificación de la brecha y su respectiva mitigación a nivel de código.
+Este repositorio centraliza mis prácticas y laboratorios de análisis de vulnerabilidades web, seguridad en el desarrollo y validación de datos. El objetivo principal es comprender cómo las fallas en el procesamiento de inputs y la mala configuración de aplicaciones permiten la explotación de sistemas, haciendo foco en la comprensión de la causa raíz y el análisis de su remediación técnica (Secure Coding).
 
 ## Estructura del Entorno
 

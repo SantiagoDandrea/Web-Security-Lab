@@ -306,61 +306,88 @@ Las consultas parametrizadas evitan que las condiciones lógicas inyectadas en l
 
 ## Remediación en PHP y MySQL
 
-Para solucionar estas vulnerabilidades de raíz en PHP y MySQL, la medida principal es utilizar **consultas preparadas (Prepared Statements)** en lugar de concatenar texto en las sentencias SQL.
+Para solucionar estas vulnerabilidades en el código de DVWA, la medida principal es reemplazar la concatenación dinámica por **consultas preparadas (Prepared Statements)**.
 
-### 1. Consultas preparadas con PDO (Recomendado)
+### 1. Parche directo sobre el código de DVWA (MySQLi)
 
-Con PDO se puede desactivar la emulación nativa para asegurar que la base de datos reciba los datos de forma separada a la consulta:
+En los niveles vulnerables de DVWA (`low.php` y `medium.php`), el código original toma la entrada del usuario y la concatena en la variable `$query` antes de pasarla a `mysqli_query`:
 
 ```php
 <?php
-// Conexión con PDO
-$pdo = new PDO('mysql:host=localhost;dbname=dvwa;charset=utf8mb4', $db_user, $db_pass, [
-    PDO::ATTR_EMULATE_PREPARES   => false,                  // Consultas preparadas reales en el motor
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // Manejo de errores
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-]);
+// Código vulnerable original (DVWA medium.php)
+$id = $_POST['id'];
+$id = mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $id);
 
-// 1. Definir la consulta con el parámetro nombrado
-$stmt = $pdo->prepare('SELECT first_name, last_name FROM users WHERE user_id = :id LIMIT 1');
+$query  = "SELECT first_name, last_name FROM users WHERE user_id = $id;";
+$result = mysqli_query($GLOBALS["___mysqli_ston"], $query);
+?>
+```
 
-// 2. Ejecutar pasando el dato
-$stmt->execute(['id' => (int)$_POST['id']]);
-$user = $stmt->fetch();
+Para corregirlo manteniendo la librería MySQLi que utiliza DVWA, se debe sustituir por `mysqli_prepare()` y vincular el parámetro con tipo entero (`"i"`):
 
-if ($user) {
-    echo "First name: " . htmlspecialchars($user['first_name'], ENT_QUOTES, 'UTF-8') . "<br>";
-    echo "Surname: " . htmlspecialchars($user['last_name'], ENT_QUOTES, 'UTF-8');
+```php
+<?php
+// Versión corregida con consultas preparadas (MySQLi)
+$id = $_POST['id'];
+
+// 1. Preparar la plantilla de la consulta con el marcador de posición '?'
+$stmt = mysqli_prepare($GLOBALS["___mysqli_ston"], "SELECT first_name, last_name FROM users WHERE user_id = ?");
+
+if ($stmt) {
+    // 2. Vincular el parámetro forzando tipo entero ('i')
+    mysqli_stmt_bind_param($stmt, "i", $id);
+    
+    // 3. Ejecutar la consulta
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        echo "First name: " . htmlspecialchars($row['first_name'], ENT_QUOTES, 'UTF-8') . "<br>";
+        echo "Surname: " . htmlspecialchars($row['last_name'], ENT_QUOTES, 'UTF-8') . "<br>";
+    }
+    
+    mysqli_stmt_close($stmt);
+}
+?>
+```
+
+### 2. Implementación con PDO (Enfoque del nivel Impossible de DVWA)
+
+El propio nivel **Impossible** de DVWA resuelve la inyección migrando a PDO y combinando validación de entrada (`is_numeric`) con consultas preparadas:
+
+```php
+<?php
+// Enfoque del nivel Impossible de DVWA con PDO
+$id = $_GET['id'];
+
+if (is_numeric($id)) {
+    $id = intval($id);
+
+    // Preparar y ejecutar con PDO vinculando el parámetro tipado
+    $stmt = $pdo->prepare('SELECT first_name, last_name FROM users WHERE user_id = :id LIMIT 1');
+    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+    $stmt->execute();
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($row) {
+        echo "First name: " . htmlspecialchars($row['first_name'], ENT_QUOTES, 'UTF-8') . "<br>";
+        echo "Surname: " . htmlspecialchars($row['last_name'], ENT_QUOTES, 'UTF-8') . "<br>";
+    } else {
+        echo "User ID is MISSING from the database.";
+    }
 } else {
     echo "User ID is MISSING from the database.";
 }
 ?>
 ```
 
-### 2. Consultas preparadas con MySQLi
+### ¿Qué ocurre al enviar los payloads contra el código corregido?
 
-Si se utiliza `mysqli`, se utiliza `prepare()` con `bind_param()` especificando el tipo (`i` para números enteros):
+Si intentamos ejecutar los mismos payloads de los niveles anteriores contra la consulta preparada:
+1. Al enviar `1 OR 1=1` o `1' OR '1'='1' #`:
+   * En MySQLi con `bind_param("i", ...)` o PDO con `PDO::PARAM_INT`, el motor de base de datos no interpreta el texto como operadores SQL ni como delimitadores. Lo trata estrictamente como el valor literal del campo `user_id`.
+   * Si se aplica `intval()` o validación numérica, los caracteres que no sean dígitos son descartados o la consulta es rechazada.
+2. Al enviar `1 UNION SELECT user, password FROM users`:
+   * Como la estructura de la consulta ya fue compilada por la base de datos de forma previa, el operador `UNION` no se evalúa como una instrucción secundaria.
+   * La base de datos busca un usuario cuyo identificador coincida literalmente con esa cadena completa. Al no existir ningún registro con ese ID, la consulta devuelve 0 filas, neutralizando la extracción de datos por completo.
 
-```php
-<?php
-$stmt = $mysqli->prepare('SELECT first_name, last_name FROM users WHERE user_id = ?');
-
-// Vincular estrictamente como entero
-$id = (int)$_POST['id'];
-$stmt->bind_param('i', $id);
-
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($row = $result->fetch_assoc()) {
-    echo "First name: " . htmlspecialchars($row['first_name'], ENT_QUOTES, 'UTF-8') . "<br>";
-    echo "Surname: " . htmlspecialchars($row['last_name'], ENT_QUOTES, 'UTF-8');
-}
-$stmt->close();
-?>
-```
-
-### Buenas prácticas adicionales:
-* **Casteo de tipos:** Si un campo debe ser un número entero, forzar la conversión en PHP con `(int)` antes de procesarlo.
-* **Mínimo privilegio:** El usuario de base de datos que usa la web no debería tener permisos de administración ni acceso a tablas internas que no necesite.
-* **Ocultar errores en producción:** Asegurarse de que `display_errors` esté desactivado para no filtrar nombres de tablas o versiones del servidor si ocurre un error.

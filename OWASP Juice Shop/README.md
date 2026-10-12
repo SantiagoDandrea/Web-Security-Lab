@@ -52,22 +52,17 @@ No confiar en que una funcionalidad está protegida por no mostrarla en el menú
 
 **Análisis**
 
-Una vulnerabilidad DOM XSS ocurre cuando datos controlados por el usuario pasan por JavaScript en el navegador y se usan de forma insegura para modificar el DOM:
-- **Source:** el valor ingresado en el buscador.
-- **Sink peligroso:** la función `bypassSecurityTrustHtml()` de Angular.
+Una vulnerabilidad DOM XSS ocurre cuando datos controlados por el usuario se procesan del lado del cliente mediante JavaScript y terminan insertándose en el DOM de forma no segura:
+- **Source:** El parámetro de búsqueda que el usuario ingresa en la aplicación.
+- **Sink peligroso:** La función `bypassSecurityTrustHtml()` de Angular.
 
-```javascript
-const input = location.hash; // Source
-document.write(input);       // Sink peligroso
-```
-
-Normalmente Angular sanitiza el contenido antes de insertarlo en la página. Sin embargo, en el componente de búsqueda la aplicación utilizaba explícitamente:
+Normalmente Angular cuenta con un mecanismo de sanitización integrado que neutraliza código HTML y scripts dinámicos. Sin embargo, en el componente de búsqueda de Juice Shop la aplicación llamaba explícitamente a:
 
 ```typescript
-bypassSecurityTrustHtml(queryParam)
+this.sanitizer.bypassSecurityTrustHtml(queryParam);
 ```
 
-Al deshabilitar la protección nativa de Angular, el texto ingresado se interpreta directamente como HTML.
+Al desactivar intencionalmente el filtro de seguridad del framework, cualquier etiqueta HTML o script que viaje en `queryParam` pasa directo al navegador sin sanitizar.
 
 **Payload / exploit**
 
@@ -346,9 +341,10 @@ La consulta concatena `${criteria}` y utiliza la condición `AND deletedAt IS NU
    ```bash
    curl 'http://localhost:3000/api/BasketItems/' \
      -H 'Content-Type: application/json' \
-     -H 'Authorization: Bearer <TOKEN>' \
+     -H 'Authorization: Bearer <TOKEN_DE_SESION>' \
      --data-raw '{"ProductId":10,"BasketId":"1","quantity":1}'
    ```
+   *(Nota: `<TOKEN_DE_SESION>` corresponde al JWT de autenticación obtenido al iniciar sesión en la aplicación, omitido aquí por legibilidad).*
 
    ![](./images/normal-Post.png)
 
