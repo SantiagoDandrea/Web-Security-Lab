@@ -80,7 +80,7 @@ Sin embargo, al mirar cómo se construye la consulta en el servidor:
 SELECT first_name, last_name FROM users WHERE user_id = $id;
 ```
 
-**Por qué falló la protección:** En este nivel, el parámetro `$id` no está entre comillas en la consulta. La función `mysqli_real_escape_string()` está diseñada para escapar caracteres delimitadores de strings (como comillas simples o dobles), pero **no previene inyecciones en campos numéricos**. Como el payload que necesitamos inyectar no lleva comillas, la función de escape no hace nada y la expresión se ejecuta directamente.
+**Por qué falló la protección:** En este nivel, el parámetro `$id` se incorpora como un literal numérico sin comillas delimitadoras en la consulta (`WHERE user_id = $id`). La función `mysqli_real_escape_string()` está diseñada para escapar caracteres especiales de cadenas (como comillas simples, dobles o bytes nulos), pero **no neutraliza inyecciones cuando el valor se concatena en un contexto numérico**. Como el payload inyectado (`1 OR 1=1`) no requiere comillas ni caracteres especiales para alterar la lógica booleana de la sentencia, la función de escape no impide que la expresión SQL se ejecute directamente.
 
 **Payload / exploit**
 
@@ -110,9 +110,9 @@ Fue posible alterar la condición `WHERE` y obtener los datos de todos los usuar
 
 **Mitigación**
 
-No confiar en funciones de escape de strings para proteger campos numéricos. Para este caso:
-1. Usar **Prepared Statements** vinculando el parámetro como tipo entero.
-2. Hacer un casteo explícito en PHP con `(int)$_POST['id']` antes de usar el valor.
+No confiar en funciones de escape de cadenas para proteger campos numéricos. La solución de raíz consiste en:
+1. **Prepared Statements (Solución principal):** Parametrizar la consulta vinculando el valor con tipado entero estricto. Esto delega la separación entre código y datos al motor de base de datos.
+2. **Validación y tipado de entrada (Defensa en profundidad):** Validar que la entrada cumpla estrictamente el formato numérico esperado (mediante `is_numeric()` o casteo explícito a entero `(int)$_POST['id']`) antes de su procesamiento. Un casteo o validación complementa la seguridad, pero no debe considerarse un sustituto universal de la parametrización de consultas.
 
 **Referencia:** [OWASP Top 10:2021 – A03: Injection](https://owasp.org/Top10/A03_2021-Injection/)
 
@@ -148,7 +148,7 @@ UNION
 SELECT user, password FROM users;
 ```
 
-De esta forma, en el campo de `First name` la aplicación muestra el nombre de usuario (`user`) y en `Surname` muestra la contraseña almacenada (`password`).
+De esta forma, en el campo de `First name` la aplicación muestra el nombre de usuario (`user`) y en `Surname` muestra el hash de la contraseña almacenada (`password`).
 
 ![](./images/UNIONsqliM1.png)
 
@@ -158,7 +158,7 @@ Fue posible extraer los nombres de usuario y los hashes de contraseñas de los c
 
 **Mitigación**
 
-Al utilizar consultas preparadas, la base de datos compila la estructura de la consulta de antemano. Lo que el usuario ingrese se procesa únicamente como el valor de búsqueda, impidiendo que el operador `UNION` sea interpretado como una instrucción SQL.
+Al implementar **consultas preparadas**, el motor de base de datos compila previamente el plan de ejecución de la consulta. La entrada del usuario se vincula exclusivamente como un valor literal para el parámetro evaluado en la cláusula `WHERE`, impidiendo que operadores como `UNION` o palabras clave SQL modifiquen la estructura de la sentencia. Cabe destacar que la parametrización protege únicamente los valores de datos; si se construyen dinámicamente identificadores (como nombres de tablas o columnas), estos deben ser validados mediante listas blancas (*allowlists*).
 
 **Referencia:** [OWASP Top 10:2021 – A03: Injection](https://owasp.org/Top10/A03_2021-Injection/)
 
@@ -168,11 +168,11 @@ Al utilizar consultas preparadas, la base de datos compila la estructura de la c
 
 **Categoría OWASP:** A03:2021 – Injection
 
-**Descripción:** Explotar la SQL Injection del nivel High para obtener las contraseñas de los usuarios superando intermediaciones de sesión y la cláusula `LIMIT 1`.
+**Descripción:** Explotar la SQL Injection del nivel High para obtener los hashes de contraseñas de los usuarios superando intermediaciones de sesión y la cláusula `LIMIT 1`.
 
 **Objetivo**
 
-El apartado **Help** indica que existen cinco usuarios en la base de datos y que el objetivo es obtener sus contraseñas mediante SQL Injection.
+El apartado **Help** indica que existen cinco usuarios en la base de datos y que el objetivo es obtener sus credenciales (hashes almacenados) mediante SQL Injection.
 
 **Análisis**
 
@@ -208,17 +208,17 @@ SELECT user,password FROM users
 -- - LIMIT 1;
 ```
 
-Al comentar el `LIMIT 1`, el `UNION SELECT` devuelve todas las filas con los usuarios y contraseñas.
+Al utilizar `-- -`, se descarta la cláusula `LIMIT 1` de la consulta original. Esto permite que el bucle `while` en el código PHP del backend procese e imprima en pantalla todas las filas devueltas por el `UNION SELECT`.
 
 ![](./images/DVWAsqliH1.png)
 
 **Resultado**
 
-Fue posible obtener los cinco nombres de usuario y las contraseñas almacenadas en la base de datos, cumpliendo el objetivo del ejercicio.
+Fue posible obtener los cinco nombres de usuario y los hashes de contraseñas almacenados en la base de datos, cumpliendo el objetivo del ejercicio.
 
 **Mitigación**
 
-Cualquier dato que termine en una consulta SQL debe parametrizarse en el punto de ejecución, sin importar si viene de una petición GET, POST o de una variable de sesión.
+Cualquier dato proporcionado por el usuario o recuperado de almacenamiento intermedio (como `$_SESSION`) debe vincularse como parámetro tipado en el punto de ejecución de la consulta. El almacenamiento temporal en variables de sesión no constituye un mecanismo de sanitización ni neutraliza la inyección.
 
 **Referencia:** [OWASP Top 10:2021 – A03: Injection](https://owasp.org/Top10/A03_2021-Injection/)
 
@@ -298,7 +298,8 @@ Fue posible identificar que el motor de base de datos es **MariaDB 10.11.19** si
 
 **Mitigación**
 
-Las consultas parametrizadas evitan que las condiciones lógicas inyectadas en la cláusula `WHERE` sean evaluadas por la base de datos, neutralizando la inferencia booleana por completo.
+1. **Consultas parametrizadas:** Al tratar el valor ingresado estrictamente como un dato literal y no como código SQL ejecutable, la base de datos busca una coincidencia exacta para la cadena completa y no evalúa la condición lógica inyectada (`OR @@version LIKE ...`), neutralizando por completo el oráculo booleano.
+2. **Principio de mínimo privilegio (Defensa en profundidad):** Configurar la cuenta de base de datos utilizada por la aplicación web con los privilegios mínimos necesarios para su operación (ej. `SELECT`, `INSERT`, `UPDATE` en tablas de negocio), restringiendo el acceso a variables del sistema, funciones administrativas o tablas de metadatos (`information_schema`).
 
 **Referencia:** [OWASP Top 10:2021 – A03: Injection](https://owasp.org/Top10/A03_2021-Injection/)
 

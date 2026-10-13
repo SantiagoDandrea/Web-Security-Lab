@@ -19,12 +19,13 @@ Prácticas de inyección y fallas lógicas en entornos tradicionales (PHP/MySQL)
 ### 3. [PortSwigger Web Security Academy](./PortSwigger/README.md)
 Resolución de laboratorios avanzados de seguridad web utilizando Burp Suite.
 * **Foco:** Manipulación de JSON Web Tokens (JWT), vulnerabilidades lógicas, manipulación de sesiones y evasión de filtros XSS.
-* **Casos documentados:** Falsificación de firmas JWT para escalamiento de privilegios, modificación de parámetros de usuario en el lado del cliente y bypass de controles para ejecución de Cross-Site Scripting (Reflected y DOM).
+* **Foco:** Manipulación de JSON Web Tokens (JWT), vulnerabilidades lógicas, manipulación de sesiones y evasión de filtros XSS.
+* **Casos documentados:** Falsificación de firmas JWT para escalamiento de privilegios, modificación de parámetros de usuario en el lado del cliente, bypass de controles para ejecución de Cross-Site Scripting (Reflected, Stored y DOM) y exfiltración de cookies de sesión mediante Burp Collaborator.
 
 ## Herramientas y Metodología de Trabajo
 Para el desarrollo de los laboratorios se utilizó el siguiente stack de herramientas y metodología de análisis:
 * **Entorno y Aislamiento:** Docker para el despliegue local de contenedores aislados y reproducibles (DVWA y OWASP Juice Shop).
-* **Análisis de Tráfico HTTP:** Burp Suite Community Edition (Proxy para intercepción y análisis de flujo de peticiones, Repeater para modificación de parámetros en cabeceras y cuerpos HTTP, y Collaborator para detección de interacciones fuera de banda / OAST).
+* **Análisis de Tráfico HTTP:** Burp Suite (Proxy para intercepción y análisis de flujo de peticiones HTTP, Repeater para manipulación y reenvío de parámetros, y Burp Collaborator en entornos de laboratorio para recepción y exfiltración de interacciones fuera de banda).
 * **Inspección de Cliente:** Chromium DevTools (Inspección del DOM, depuración de scripts del cliente y seguimiento de sinks/sources en vulnerabilidades DOM-based).
 * **Pruebas de API y Automatización:** cURL para repetición rápida y verificación de endpoints.
 * **Revisión de Código Fuente:** Análisis estático de los repositorios y controladores vulnerables (`high.php` en DVWA, controladores Sequelize/Express en Juice Shop) para identificar la causa raíz de cada fallo a nivel de código.
