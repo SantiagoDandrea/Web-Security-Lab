@@ -7,7 +7,7 @@
 - [Lab: DOM XSS in document.write sink using location.search](#lab-dom-xss-in-documentwrite-sink-using-locationsearch)
 - [Lab: Reflected XSS into attribute with angle brackets HTML-encoded](#lab-reflected-xss-into-attribute-with-angle-brackets-html-encoded)
 - [Lab: Reflected XSS into a JavaScript string with angle brackets HTML-encoded](#lab-reflected-xss-into-a-javascript-string-with-angle-brackets-html-encoded)
-- [Cross-Site Scripting - Stored XSS - Stealing Cookies](#cross-site-scripting---stored-xss---stealing-cookies)
+- [Lab: Cross-Site Scripting - Stored XSS - Stealing Cookies](#lab-cross-site-scripting---stored-xss---stealing-cookies)
 - [Lab: 2FA simple bypass](#lab-2fa-simple-bypass)
 - [Lab: Password reset broken logic](#lab-password-reset-broken-logic)
 - [Lab: User ID controlled by request parameter](#lab-user-id-controlled-by-request-parameter)
@@ -255,7 +255,7 @@ La aplicación debe evitar insertar directamente datos controlados por el usuari
 
 ---
 
-## Cross-Site Scripting - Stored XSS - Stealing Cookies
+## Lab: Cross-Site Scripting - Stored XSS - Stealing Cookies
 
 **Categoría OWASP:** A03:2021 – Injection
 
