@@ -1,6 +1,6 @@
-# Labs PortSwigger
+# Labs PortSwigger Web Security Academy
 
-## 📑 Tabla de Contenidos
+## Tabla de Contenidos
 - [Mitigaciones generales contra XSS](#mitigaciones-generales-contra-xss)
 - [Lab: Reflected XSS into HTML context with nothing encoded](#lab-reflected-xss-into-html-context-with-nothing-encoded)
 - [Lab: Stored XSS into HTML context with nothing encoded](#lab-stored-xss-into-html-context-with-nothing-encoded)
@@ -13,19 +13,25 @@
 - [Lab: User ID controlled by request parameter](#lab-user-id-controlled-by-request-parameter)
 - [Lab: JWT authentication bypass via unverified signature](#lab-jwt-authentication-bypass-via-unverified-signature)
 
+---
+
 ## Mitigaciones generales contra XSS
 
 Las principales medidas utilizadas para prevenir XSS dependen del contexto en el que se procesa el contenido:
 
 - **Output encoding:** tratar los datos controlados por el usuario como texto antes de insertarlos en HTML, atributos o JavaScript.
 - **Context-aware encoding:** utilizar el tratamiento adecuado según el contexto donde se inserta el dato.
-- **Evitar sinks peligrosos:** no utilizar funciones como `document.write()` con contenido controlado por el usuario.
+- **Evitar sinks peligrosos:** no utilizar funciones como `document.write()` o `innerHTML` con contenido controlado por el usuario.
 - **HttpOnly:** impedir que JavaScript pueda acceder directamente a cookies de sesión.
-- **Content Security Policy (CSP):** utilizar una política restrictiva como capa adicional de defensa frente a la ejecución de contenido no autorizado.
+- **Content Security Policy (CSP):** utilizar una política restrictiva como capa adicional de defensa frente a la ejecución de contenido no autorizado o conexiones a servidores externos.
 
 Estas medidas no son intercambiables: cada una protege frente a un aspecto diferente del problema.
 
+---
+
 ## Lab: Reflected XSS into HTML context with nothing encoded
+
+**Categoría OWASP:** A03:2021 – Injection
 
 **Descripción:** Realizar un ataque XSS reflejado que permita ejecutar la función `alert()`.
 
@@ -39,7 +45,7 @@ Al no tratar el contenido ingresado como texto, es posible insertar etiquetas HT
 
 Escribí dentro del buscador:
 
-```text
+```html
 <script>alert()</script>
 ```
 
@@ -59,11 +65,15 @@ Fue posible ejecutar código JavaScript mediante una entrada reflejada en la res
 
 **Mitigación**
 
-La principal mitigación es realizar **output encoding según el contexto** antes de insertar datos controlados por el usuario en la respuesta HTML.
+La principal mitigación es realizar **output encoding según el contexto** antes de insertar datos controlados por el usuario en la respuesta HTML (codificar `<` en `&lt;`, `>` en `&gt;`, etc.), para que el navegador los trate siempre como texto plano y no como etiquetas ejecutables.
 
-En este caso, los caracteres que puedan ser interpretados como HTML deben codificarse para que el contenido sea tratado como texto y no como código.
+**Referencia:** [PortSwigger – Reflected XSS](https://portswigger.net/web-security/cross-site-scripting/reflected)
+
+---
 
 ## Lab: Stored XSS into HTML context with nothing encoded
+
+**Categoría OWASP:** A03:2021 – Injection
 
 **Descripción:** Subir un comentario que ejecute la función `alert()` cuando se visualiza el posteo.
 
@@ -77,7 +87,7 @@ Al no realizarse ningún tipo de codificación sobre el contenido almacenado, es
 
 Comenté el post **"# Do You Speak English?"** utilizando:
 
-```text
+```html
 <script>alert()</script>
 ```
 
@@ -85,23 +95,25 @@ Comenté el post **"# Do You Speak English?"** utilizando:
 
 En el primer intento tuve un error de tipeo y escribí `Alert()` en lugar de `alert()`. Después de corregirlo, el payload se ejecutó correctamente al visualizar el comentario.
 
+![](./images/PSXSSs2.png)
+
 **Resultado**
 
 Fue posible almacenar código JavaScript dentro de un comentario y ejecutarlo automáticamente cada vez que se visualiza el posteo.
 
 Esto demuestra la diferencia principal con el **Reflected XSS** anterior: el payload permanece almacenado en la aplicación y no necesita ser enviado nuevamente en cada petición para ejecutarse.
 
-![](./images/PSXSSs2.png)
-
 **Mitigación**
 
-La principal mitigación es realizar **output encoding según el contexto** antes de mostrar el contenido almacenado, de manera que sea interpretado como texto y no como código HTML o JavaScript.
+La principal mitigación es realizar **output encoding según el contexto** antes de mostrar el contenido almacenado, de manera que sea interpretado como texto y no como código HTML o JavaScript. En este caso, el contenido almacenado debe tratarse como datos no confiables cada vez que se inserta en la respuesta.
 
-En este caso, el contenido almacenado debe tratarse como datos no confiables cada vez que se inserta en la respuesta.
+**Referencia:** [PortSwigger – Stored XSS](https://portswigger.net/web-security/cross-site-scripting/stored)
 
-Referencia: [PortSwigger Web Security Academy – Stored XSS](https://portswigger.net/web-security/cross-site-scripting/stored)
+---
 
 ## Lab: DOM XSS in `document.write` sink using `location.search`
+
+**Categoría OWASP:** A03:2021 – Injection
 
 **Descripción:** Realizar un ataque DOM XSS utilizando el parámetro de búsqueda para ejecutar la función `alert()`.
 
@@ -137,15 +149,15 @@ Este laboratorio demuestra una variante de **DOM XSS**, donde la vulnerabilidad 
 
 **Mitigación**
 
-La principal mitigación es evitar utilizar sinks inseguros como `document.write()` con datos controlados por el usuario.
+La principal mitigación es evitar utilizar sinks inseguros como `document.write()` con datos controlados por el usuario. Cuando sea necesario insertar contenido dinámico, se deben utilizar métodos que traten el contenido como texto, como `textContent`, en lugar de interpretarlo como HTML.
 
-Cuando sea necesario insertar contenido dinámico, se deben utilizar métodos que traten el contenido como texto, como `textContent`, en lugar de interpretarlo como HTML.
+**Referencia:** [PortSwigger – DOM-based XSS](https://portswigger.net/web-security/cross-site-scripting/dom-based)
 
-También es importante analizar el flujo de datos desde el **source** hasta el **sink** y aplicar un tratamiento seguro antes de que el dato llegue a una función capaz de interpretarlo como código o HTML.
-
-Referencia: [PortSwigger Web Security Academy – DOM XSS](https://portswigger.net/web-security/cross-site-scripting/dom-based)
+---
 
 ## Lab: Reflected XSS into attribute with angle brackets HTML-encoded
+
+**Categoría OWASP:** A03:2021 – Injection
 
 **Descripción:** Realizar un ataque Reflected XSS dentro de un atributo HTML para ejecutar la función `alert()`.
 
@@ -177,11 +189,7 @@ El HTML resultante queda conceptualmente como:
 <input type="text" name="search" value="" autofocus onfocus="alert(document.domain)" x="">
 ```
 
-La primera comilla cierra el atributo `value`, permitiendo agregar nuevos atributos al elemento.
-
-`autofocus` hace que el campo reciba automáticamente el foco y `onfocus` ejecuta `alert(document.domain)` cuando esto ocurre.
-
-El último `x="` permite cerrar nuevamente la estructura del atributo.
+La primera comilla cierra el atributo `value`, permitiendo agregar nuevos atributos al elemento. `autofocus` hace que el campo reciba automáticamente el foco y `onfocus` ejecuta `alert(document.domain)` cuando esto ocurre. El último `x="` permite cerrar nuevamente la estructura del atributo.
 
 ![](./images/PSXSS4.png)
 
@@ -193,21 +201,21 @@ Este laboratorio demuestra que la mitigación debe tener en cuenta el **contexto
 
 **Mitigación**
 
-La aplicación debe realizar un **output encoding adecuado al contexto del atributo HTML**, incluyendo el tratamiento de caracteres que permitan escapar del atributo, como las comillas.
+La aplicación debe realizar un **output encoding adecuado al contexto del atributo HTML**, incluyendo el tratamiento de caracteres que permitan escapar del atributo, como las comillas (`&quot;` o `&#39;`).
 
-También es recomendable utilizar mecanismos seguros para insertar datos en atributos y evitar construir HTML mediante concatenación de contenido controlado por el usuario.
+**Referencia:** [PortSwigger – XSS contexts](https://portswigger.net/web-security/cross-site-scripting/contexts)
 
-Referencia: [PortSwigger Web Security Academy – XSS contexts](https://portswigger.net/web-security/cross-site-scripting/contexts)
+---
 
 ## Lab: Reflected XSS into a JavaScript string with angle brackets HTML-encoded
+
+**Categoría OWASP:** A03:2021 – Injection
 
 **Descripción:** Realizar un ataque Reflected XSS dentro de una cadena JavaScript para ejecutar la función `alert()`.
 
 **Análisis**
 
-En este caso, el contenido de la búsqueda se refleja dentro de una cadena JavaScript.
-
-El código de la aplicación utiliza el valor ingresado para construir una variable:
+En este caso, el contenido de la búsqueda se refleja dentro de una cadena JavaScript. El código de la aplicación utiliza el valor ingresado para construir una variable:
 
 ```javascript
 var searchTerms = 'INPUT';
@@ -231,23 +239,25 @@ var searchTerms = ''; alert() //';
 
 La primera comilla del payload cierra el string JavaScript original. El `;` termina la instrucción y permite ejecutar `alert()` como una nueva instrucción. Finalmente, `//` comenta el resto de la línea, evitando que la comilla agregada originalmente por la aplicación genere un error de sintaxis.
 
+![](./images/PSXSSJS1.png)
+
 **Resultado**
 
 Fue posible ejecutar código JavaScript mediante una entrada reflejada dentro de una cadena JavaScript, a pesar de que los caracteres `<` y `>` estaban codificados.
-
-![](./images/PSXSSJS1.png)
 
 Este laboratorio demuestra que el contexto en el que se inserta el contenido es fundamental para analizar una vulnerabilidad XSS. En este caso, el problema no estaba en la interpretación de HTML, sino en la posibilidad de escapar de una cadena JavaScript.
 
 **Mitigación**
 
-La aplicación debe evitar insertar directamente datos controlados por el usuario dentro de código JavaScript.
+La aplicación debe evitar insertar directamente datos controlados por el usuario dentro de código JavaScript. Cuando sea necesario incluir datos dinámicos, deben utilizarse mecanismos seguros como serialización con `JSON.stringify()` o leer los datos desde atributos HTML seguros mediante `dataset`.
 
-Cuando sea necesario incluir datos dinámicos, deben utilizarse mecanismos seguros de serialización y **output encoding adecuado al contexto JavaScript**.
+**Referencia:** [PortSwigger – XSS contexts](https://portswigger.net/web-security/cross-site-scripting/contexts)
 
-Referencia: [PortSwigger Web Security Academy – XSS contexts](https://portswigger.net/web-security/cross-site-scripting/contexts)
+---
 
 ## Cross-Site Scripting - Stored XSS - Stealing Cookies
+
+**Categoría OWASP:** A03:2021 – Injection
 
 **Descripción:** Explotar una Stored XSS para obtener la cookie de sesión de otro usuario y utilizarla para acceder a su sesión.
 
@@ -255,7 +265,7 @@ Referencia: [PortSwigger Web Security Academy – XSS contexts](https://portswig
 
 El objetivo del laboratorio es explotar una vulnerabilidad de Cross-Site Scripting para robar la cookie de sesión de un usuario mediante Burp Collaborator y utilizarla para acceder a su cuenta.
 
-**Análisis**
+**Análisis y explotación**
 
 El punto vulnerable se encuentra en los comentarios de una publicación del blog, donde es posible almacenar contenido que posteriormente será procesado por el navegador de otro usuario.
 
@@ -275,11 +285,11 @@ El código utiliza `document.cookie` para obtener las cookies accesibles mediant
 
 ![](./images/PSXSSC1.png)
 
-Después de publicar el comentario, esperé la interacción del usuario víctima con el contenido. Burp Collaborator recibió una petición HTTP cuyo contenido incluía una cookie de sesión.
+Después de publicar el comentario, esperé la interacción del usuario víctima con el contenido. Burp Collaborator recibió una petición HTTP cuyo contenido incluía la cookie de sesión del administrador:
 
 ![](./images/PSXSSC2.png)
 
-La cookie obtenida contenía el identificador de sesión del usuario víctima. Para comprobar su utilidad, tomé una petición realizada al sitio desde el navegador y la envié a Repeater, reemplazando el valor de mi cookie `session` por el valor obtenido mediante la XSS.
+La cookie obtenida contenía el identificador de sesión del usuario víctima. Para comprobar su utilidad, tomé una petición realizada al sitio desde el navegador y la envié a Repeater, reemplazando el valor de mi cookie `session` por el valor obtenido mediante la XSS:
 
 ![](./images/PSXSSC3.png)
 
@@ -293,17 +303,35 @@ El ataque demuestra que una XSS puede utilizarse no solo para ejecutar JavaScrip
 
 **Mitigación**
 
-Una medida de protección frente al robo de cookies mediante JavaScript es utilizar el atributo `HttpOnly` en las cookies de sesión:
+Una medida de protección importante frente al robo directo de cookies mediante JavaScript es configurar el atributo `HttpOnly`:
 
 ```http
 Set-Cookie: session=...; HttpOnly
 ```
 
-De esta forma, la cookie continúa siendo enviada automáticamente en las peticiones correspondientes, pero no puede ser accedida mediante `document.cookie`.
+De esta forma, la cookie continúa siendo enviada automáticamente en las peticiones del navegador, pero no puede ser leída mediante `document.cookie`.
 
-Esta medida debe complementarse con las mitigaciones propias de XSS, principalmente realizar un correcto output encoding según el contexto.
+**¿Por qué HttpOnly no es suficiente por sí solo frente a un XSS?**
+
+Si la cookie de este laboratorio hubiera tenido `HttpOnly`, el script no habría podido leerla y el payload habría enviado un valor vacío a Burp Collaborator. 
+
+Sin embargo, esto no significa que la vulnerabilidad XSS esté resuelta:
+- Como el atacante tiene la capacidad de ejecutar JavaScript en el navegador de la víctima mientras la sesión está abierta, no necesita conocer la cookie para actuar como ella: puede utilizar `fetch()` o `XMLHttpRequest` para disparar peticiones legítimas en segundo plano (las cookies de sesión se adjuntan automáticamente en la petición).
+- Con estas peticiones, el script puede cambiar la contraseña, el email de la cuenta o realizar acciones en la aplicación en nombre del usuario sin que este se dé cuenta.
+- Además, el script puede modificar la interfaz (por ejemplo agregando formularios falsos para pedir credenciales).
+
+Por lo tanto, la verdadera solución de raíz es evitar que el código malicioso pueda inyectarse en primer lugar:
+1. Realizar **output encoding según el contexto** y sanitización sobre los comentarios antes de renderizarlos.
+2. Implementar una **Content Security Policy (CSP)** restrictiva que bloquee el envío de datos hacia servidores externos desconocidos (como Collaborator).
+3. Utilizar `HttpOnly` y `SameSite` en las cookies de sesión como capa de defensa en profundidad.
+
+**Referencia:** [PortSwigger – Stored XSS - Stealing Cookies](https://portswigger.net/web-security/cross-site-scripting/exploiting/lab-stealing-cookies)
+
+---
 
 ## Lab: 2FA simple bypass
+
+**Categoría OWASP:** A07:2021 – Identification and Authentication Failures
 
 **Descripción:** Explotar un bypass de autenticación de dos factores para acceder a la cuenta de un usuario sin conocer su código 2FA.
 
@@ -317,23 +345,29 @@ carlos:montoya
 
 El problema se encuentra en la forma en que la aplicación implementa el segundo factor. PortSwigger explica que algunas aplicaciones consideran al usuario autenticado después de validar correctamente el nombre de usuario y la contraseña, antes de completar la verificación 2FA.
 
-Por lo tanto, después de iniciar sesión con las credenciales proporcionadas, en lugar de completar el código de verificación, accedí directamente a la página principal de la cuenta.
+Por lo tanto, después de iniciar sesión con las credenciales proporcionadas, en lugar de completar el código de verificación en `/login2`, accedí directamente a la página principal de la cuenta:
+
+```text
+GET /my-account
+```
 
 El servidor permitió acceder a la cuenta sin solicitar un código 2FA válido.
 
 **Resultado**
 
-Fue posible acceder a la cuenta de Carlos sin conocer ni proporcionar su código de autenticación de dos factores.
-
-Esto demuestra que la aplicación no estaba verificando correctamente el segundo factor antes de considerar autenticada la sesión.
+Fue posible acceder a la cuenta de Carlos sin conocer ni proporcionar su código de autenticación de dos factores. Esto demuestra que la aplicación no estaba verificando correctamente el segundo factor antes de considerar autenticada la sesión.
 
 **Mitigación**
 
 La aplicación debe mantener al usuario en un estado de autenticación incompleta hasta que todos los factores requeridos hayan sido verificados. El acceso a recursos autenticados debe depender de la validación exitosa del segundo factor y no solamente de las credenciales principales.
 
-Referencia: [PortSwigger Web Security Academy – 2FA simple bypass](https://portswigger.net/web-security/authentication/multi-factor/lab-2fa-simple-bypass)
+**Referencia:** [PortSwigger – 2FA simple bypass](https://portswigger.net/web-security/authentication/multi-factor/lab-2fa-simple-bypass)
+
+---
 
 ## Lab: Password reset broken logic
+
+**Categoría OWASP:** A07:2021 – Identification and Authentication Failures
 
 **Descripción:** Explotar una vulnerabilidad en el mecanismo de recuperación de contraseña para modificar la contraseña de otro usuario.
 
@@ -349,10 +383,10 @@ y establece como objetivo modificar la contraseña del usuario `carlos` para pos
 
 La aplicación proporciona acceso al correo de Wiener. Al solicitar un cambio de contraseña, se recibe un enlace que contiene un token aleatorio para acceder al formulario de recuperación.
 
-El problema se encuentra en el propio formulario de cambio de contraseña. El HTML contiene un parámetro `value` asociado al nombre del usuario:
+El problema se encuentra en el propio formulario de cambio de contraseña. El HTML contiene un parámetro oculto asociado al nombre del usuario:
 
 ```html
-value="wiener"
+<input type="hidden" name="username" value="wiener">
 ```
 
 ![](./images/PS-RP1.png)
@@ -363,25 +397,25 @@ La aplicación aceptó el nombre de usuario modificado y permitió establecer un
 
 **Resultado**
 
-Fue posible modificar la contraseña de Carlos utilizando el mecanismo de recuperación de contraseña destinado originalmente a Wiener y posteriormente acceder a su cuenta.
-
-La vulnerabilidad se produce porque el servidor confía en un valor controlado por el cliente para determinar qué cuenta debe modificarse.
+Fue posible modificar la contraseña de Carlos utilizando el mecanismo de recuperación de contraseña destinado originalmente a Wiener y posteriormente acceder a su cuenta. La vulnerabilidad se produce porque el servidor confía en un valor controlado por el cliente para determinar qué cuenta debe modificarse.
 
 **Mitigación**
 
-La identidad del usuario cuya contraseña se está restableciendo debe estar vinculada de forma segura al proceso de recuperación y no depender de parámetros modificables enviados por el cliente.
+La identidad del usuario cuya contraseña se está restableciendo debe estar vinculada de forma segura al token en el servidor y no depender de parámetros modificables enviados por el cliente. Los tokens de recuperación deben ser únicos, impredecibles y de un solo uso.
 
-Los tokens de recuperación deben ser únicos, impredecibles, de un solo uso y estar asociados al usuario correspondiente. Además, el servidor debe validar que el proceso de recuperación corresponde realmente a la cuenta autorizada.
+**Referencia:** [PortSwigger – Password reset broken logic](https://portswigger.net/web-security/authentication/other-mechanisms/lab-password-reset-broken-logic)
 
-Referencia: [PortSwigger Web Security Academy – Password reset broken logic](https://portswigger.net/web-security/authentication/other-mechanisms/lab-password-reset-broken-logic)
+---
 
 ## Lab: User ID controlled by request parameter
+
+**Categoría OWASP:** A01:2021 – Broken Access Control
 
 **Descripción:** Explotar una vulnerabilidad de control de acceso que permite acceder a la información de otro usuario modificando un identificador controlado por el cliente.
 
 **Análisis**
 
-El laboratorio presenta una vulnerabilidad de **horizontal privilege escalation** en la página de cuenta de usuario.
+El laboratorio presenta una vulnerabilidad de escalamiento horizontal de privilegios (IDOR) en la página de cuenta de usuario.
 
 El objetivo es obtener la API key del usuario `carlos`. Para ello, primero inicié sesión con las credenciales proporcionadas:
 
@@ -391,11 +425,15 @@ wiener:peter
 
 La página **My Account** mostraba la API key correspondiente al usuario autenticado.
 
-Al inspeccionar la petición `GET` utilizada para obtener los datos de la cuenta, observé que el usuario estaba determinado mediante un parámetro `id` que podía ser modificado.
+Al inspeccionar la petición `GET` utilizada para obtener los datos de la cuenta, observé que el usuario estaba determinado mediante un parámetro `id` que podía ser modificado en la URL.
 
 ![](./images/PS-UIDmod.png)
 
-Cambié el valor del parámetro de wiener a carlos y envié nuevamente la petición.
+Cambié el valor del parámetro de `wiener` a `carlos` y envié nuevamente la petición:
+
+```text
+GET /my-account?id=carlos
+```
 
 ![](./images/PS-UID2.png)
 
@@ -403,20 +441,19 @@ La aplicación respondió con los datos correspondientes a la cuenta de Carlos, 
 
 **Resultado**
 
-Fue posible acceder a información perteneciente a otro usuario simplemente modificando un identificador proporcionado en la petición.
-
-Esto constituye una vulnerabilidad de **IDOR (Insecure Direct Object Reference)**, ya que el servidor no verificó que el usuario autenticado tuviera autorización para acceder al objeto solicitado.
+Fue posible acceder a información perteneciente a otro usuario simplemente modificando un identificador proporcionado en la petición. Esto constituye una vulnerabilidad de **IDOR (Insecure Direct Object Reference)**, ya que el servidor no verificó que el usuario autenticado tuviera autorización para acceder al objeto solicitado.
 
 **Mitigación**
 
-El servidor debe validar siempre que el usuario autenticado tenga autorización para acceder al recurso solicitado. No debe confiar en que un identificador proporcionado por el cliente determine por sí solo qué información puede consultar.
+El servidor debe validar siempre que el usuario autenticado tenga autorización para acceder al recurso solicitado. No debe confiar en que un identificador proporcionado por el cliente determine por sí solo qué información puede consultar. Los controles de autorización deben realizarse del lado del servidor (*server-side*).
 
-Los controles de autorización deben realizarse **server-side** para cada recurso, independientemente de que el identificador sea predecible o no.
+**Referencia:** [PortSwigger – IDOR](https://portswigger.net/web-security/access-control/idor)
 
-Referencia: PortSwigger Web Security Academy – User ID controlled by request parameter
-
+---
 
 ## Lab: JWT authentication bypass via unverified signature
+
+**Categoría OWASP:** A02:2021 – Cryptographic Failures / A07:2021 – Identification and Authentication Failures
 
 **Descripción:** Explotar una implementación incorrecta de JWT que permite modificar el contenido del token sin que el servidor verifique su firma.
 
@@ -462,17 +499,14 @@ Finalmente, utilicé el mismo JWT modificado para realizar una petición al endp
 
 ![](./images/PS-JWT2.png)
 
-
 **Resultado**
 
 Fue posible modificar el contenido del JWT y utilizarlo para acceder al panel de administración sin disponer de las credenciales del administrador.
 
-El problema principal es que el servidor aceptaba el token sin verificar correctamente su firma. Como consecuencia, podía confiar en un valor `sub` modificado por el cliente y utilizarlo para determinar la identidad y los privilegios de la sesión.
+El problema principal es que el servidor aceptaba el token sin verificar correctamente su firma. Como consecuencia, confiaba en un valor `sub` modificado por el cliente y lo utilizaba para determinar la identidad y los privilegios de la sesión.
 
 **Mitigación**
 
-El servidor debe verificar correctamente la firma de todos los JWT antes de confiar en cualquiera de sus claims. También debe validar el algoritmo utilizado y comprobar que los claims relevantes sean válidos y apropiados para la operación solicitada.
+El servidor debe verificar correctamente la firma criptográfica de todos los JWT antes de confiar en cualquiera de sus datos. Además, debe rechazar tokens con algoritmos no seguros y realizar la autorización siempre en el servidor.
 
-Además, la autorización debe realizarse **server-side** y no depender únicamente de valores proporcionados dentro del token sin una validación criptográfica adecuada.
-
-Referencia: [PortSwigger Web Security Academy – JWT authentication bypass via unverified signature](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-unverified-signature)
+**Referencia:** [PortSwigger – JWT unverified signature](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-unverified-signature)
